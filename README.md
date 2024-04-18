@@ -76,7 +76,7 @@ C:\> .\venv\Scripts\activate.bat
 
 ## Generowanie pliku `requirements.txt`
 
-Jeżeli zamierzacie instalować zewnętrzne moduły to **koniecznie** używajcie wirtualnego środowiska, ponieważ w przeciwnym wypadku w pliku `requirements.txt` znajdą się **wszystkie zainstalowane** moduły Pythona, a nie tylko te konieczne do działania projektu.
+Jeżeli zamierzacie instalować zewnętrzne moduły to **koniecznie** używajcie wirtualnego środowiska, ponieważ w przeciwnym wypadku w pliku `requirements.txt` znajdą się **wszystkie zainstalowane** na komputerze moduły Pythona, a nie tylko te konieczne do działania projektu.
 
 ```
 $ pip freeze > requirements.txt
