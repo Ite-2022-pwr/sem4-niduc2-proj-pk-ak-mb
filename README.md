@@ -31,3 +31,53 @@ transmisji.
 7. 11 czerwca - wstępne oddanie projektu oraz sprawozdania
 8. 25 czerwca - ewentualne poprawki
 
+## Instalowanie zależności
+
+```
+$ pip install -r requirements.txt
+```
+
+## Środowisko wirtualne
+
+### Tworzenie środowiska wirtualnego
+
+```
+$ python3 -m venv venv
+```
+
+Lub:
+
+```
+$ virutalenv venv
+```
+
+### Aktywacja środowiska wirtualnego
+
+#### Dla systemów Linux lub macOS
+
+```
+$ source ./venv/bin/activate
+```
+
+#### Dla systemu Windows
+
+PowerShell:
+
+```
+PS C:\> .\venv\Scripts\Activate.ps1
+```
+
+cmd:
+
+```
+	
+C:\> .\venv\Scripts\activate.bat
+```
+
+## Generowanie pliku `requirements.txt`
+
+Jeżeli zamierzacie instalować zewnętrzne moduły to **koniecznie** używajcie wirtualnego środowiska, ponieważ w przeciwnym wypadku w pliku `requirements.txt` znajdą się **wszystkie zainstalowane** moduły Pythona, a nie tylko te konieczne do działania projektu.
+
+```
+$ pip freeze > requirements.txt
+```
