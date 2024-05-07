@@ -29,6 +29,11 @@ class HammingCoderDecoder(CoderDecoder):
         )
 
     def encode_chunk(self, chunk: list[int]) -> list[int]:
+        if len(chunk) != self.data_bits:
+            raise ValueError(
+                f"Size of the chunk must be equal to a number of the data bits ({self.data_bits})"
+            )
+
         encoded_chunk = [0] * (self.total_bits + 1)
         j = 0
         for i in range(1, self.total_bits + 1):
@@ -49,6 +54,11 @@ class HammingCoderDecoder(CoderDecoder):
         return encoded_chunk
 
     def decode_chunk(self, chunk: list[int]) -> list[int]:
+        if len(chunk) != self.total_bits + 1:
+            raise ValueError(
+                f"Size of the chunk must be equal a number of total bits + 1 ({self.total_bits + 1}) - {len(chunk)}"
+            )
+
         error_position = self.find_error_position(chunk)
         chunk[error_position] = int(not chunk[error_position])
         return [
@@ -58,18 +68,34 @@ class HammingCoderDecoder(CoderDecoder):
         ]
 
     def encode(self, message: list[int]) -> list[int]:
-        return super().encode(message)
+        if len(message) % self.data_bits != 0:
+            raise ValueError(
+                f"Size of a message must be dividable by a number of the data bits ({self.data_bits})"
+            )
+        encoded_message = []
+        for i in range(0, len(message), self.data_bits):
+            chunk = self.encode_chunk(message[i : i + self.data_bits])
+            encoded_message.extend(chunk)
+        return encoded_message
 
     def decode(self, message: list[int]) -> list[int]:
-        return super().decode(message)
+        if len(message) % (self.total_bits + 1) != 0:
+            raise ValueError(
+                f"Size of a message must be dividable by a number of total bits + 1 ({self.total_bits + 1})"
+            )
+        decoded_message = []
+        for i in range(0, len(message), self.total_bits + 1):
+            chunk = self.decode_chunk(message[i : i + self.total_bits + 1])
+            decoded_message.extend(chunk)
+        return decoded_message
 
 
 if __name__ == "__main__":
     import numpy as np
 
-    print("Hamming(7, 4)")
+    print("Hamming(7, 4) - chunks")
     hcd = HammingCoderDecoder()
-    chunks = [list(np.random.randint(0, 2, 4)) for i in range(100)]
+    chunks = [list(np.random.randint(0, 2, 4)) for i in range(1000)]
     for chunk in chunks:
         try:
             encoded_chunk = hcd.encode_chunk(chunk)
@@ -79,14 +105,38 @@ if __name__ == "__main__":
         except AssertionError as err:
             print(err)
 
-    print("Hamming(15, 11)")
+    print("Hamming(15, 11) - chunks")
     hcd = HammingCoderDecoder(total_bits=15, data_bits=11)
-    chunks = [list(np.random.randint(0, 2, 11)) for i in range(100)]
+    chunks = [list(np.random.randint(0, 2, 11)) for i in range(1000)]
     for chunk in chunks:
         try:
             encoded_chunk = hcd.encode_chunk(chunk)
             # print(encoded_chunk)
             decoded_chunk = hcd.decode_chunk(encoded_chunk)
+            assert chunk == decoded_chunk, f"wanted: {chunk}, have: {decoded_chunk}"
+        except AssertionError as err:
+            print(err)
+
+    print("Hamming(7, 4)")
+    hcd = HammingCoderDecoder()
+    messages = [list(np.random.randint(0, 2, 4 * 15)) for i in range(1000)]
+    for chunk in messages:
+        try:
+            encoded_chunk = hcd.encode(chunk)
+            # print(encoded_chunk)
+            decoded_chunk = hcd.decode(encoded_chunk)
+            assert chunk == decoded_chunk, f"wanted: {chunk}, have: {decoded_chunk}"
+        except AssertionError as err:
+            print(err)
+
+    print("Hamming(15, 11)")
+    hcd = HammingCoderDecoder(total_bits=15, data_bits=11)
+    messages = [list(np.random.randint(0, 2, 11 * 15)) for i in range(1000)]
+    for chunk in messages:
+        try:
+            encoded_chunk = hcd.encode(chunk)
+            # print(encoded_chunk)
+            decoded_chunk = hcd.decode(encoded_chunk)
             assert chunk == decoded_chunk, f"wanted: {chunk}, have: {decoded_chunk}"
         except AssertionError as err:
             print(err)
