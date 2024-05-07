@@ -42,7 +42,7 @@ class HammingCoderDecoder(CoderDecoder):
             encoded_chunk[error_position] = int(not encoded_chunk[error_position])
         else:
             for parity_bit_position in self.parity_bits_positions:
-                if parity_bit_position ^ error_position != error_position:
+                if parity_bit_position ^ error_position < error_position:
                     encoded_chunk[parity_bit_position] = int(
                         not encoded_chunk[parity_bit_position]
                     )
@@ -67,8 +67,21 @@ class HammingCoderDecoder(CoderDecoder):
 if __name__ == "__main__":
     import numpy as np
 
+    print("Hamming(7, 4)")
     hcd = HammingCoderDecoder()
     chunks = [list(np.random.randint(0, 2, 4)) for i in range(100)]
+    for chunk in chunks:
+        try:
+            encoded_chunk = hcd.encode_chunk(chunk)
+            # print(encoded_chunk)
+            decoded_chunk = hcd.decode_chunk(encoded_chunk)
+            assert chunk == decoded_chunk, f"wanted: {chunk}, have: {decoded_chunk}"
+        except AssertionError as err:
+            print(err)
+
+    print("Hamming(15, 11)")
+    hcd = HammingCoderDecoder(total_bits=15, data_bits=11)
+    chunks = [list(np.random.randint(0, 2, 11)) for i in range(100)]
     for chunk in chunks:
         try:
             encoded_chunk = hcd.encode_chunk(chunk)
