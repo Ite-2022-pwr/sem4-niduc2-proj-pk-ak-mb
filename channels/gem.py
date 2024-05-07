@@ -45,19 +45,19 @@ class GilbertElliotModel(ChannelModel):
                     noisy_message.append(bit)
         print(f"good_error_change: {good_error_change}")
         print(
-            f" good_error_change in percentage: {good_error_change / (good_repetition + good_error_change) * 100}%"
+            f"good_error_change in percentage: {good_error_change / (good_repetition + good_error_change) * 100}%\n"
         )
         print(f"error_good_change: {error_good_change}")
         print(
-            f" error_good_change in percentage: {error_good_change / (error_repetition + error_good_change) * 100}%"
+            f"error_good_change in percentage: {error_good_change / (error_repetition + error_good_change) * 100}%\n"
         )
         print(f"good_repetition: {good_repetition}")
         print(
-            f"good_repetition in percentage: {good_repetition / (good_repetition + good_error_change) * 100}%"
+            f"good_repetition in percentage: {good_repetition / (good_repetition + good_error_change) * 100}%\n"
         )
         print(f"error_repetition: {error_repetition}")
         print(
-            f"error_repetition in percentage: {error_repetition / (error_repetition + error_good_change) * 100}%"
+            f"error_repetition in percentage: {error_repetition / (error_repetition + error_good_change) * 100}%\n"
         )
         return noisy_message
 
@@ -76,4 +76,6 @@ if __name__ == "__main__":
     for i in range(n):
         message.append(gem.rng.next_int_from_range(0, 1))
     noisy_message = gem.transmit(message)
-    print(sum([1 for i in range(n) if message[i] != noisy_message[i]]) / n * 100)
+    print(
+        f"Overall flipped bits percentage: {sum([1 for i in range(n) if message[i] != noisy_message[i]]) / n * 100}%"
+    )
