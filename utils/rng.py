@@ -101,6 +101,10 @@ class LinearCongruentialGenerator:
                 else genrange[0] + z0 * (genrange[1] - genrange[0])
             )
 
+    def generate_bits(self, n: int) -> Generator[int, None, None]:
+        """Generate n bits (ints in {0, 1})"""
+        return self.generate_ints(n, (0, 1))
+
 
 if __name__ == "__main__":
     lcg = LinearCongruentialGenerator()
@@ -116,6 +120,10 @@ if __name__ == "__main__":
     for _ in range(15):
         print(lcg.next_float_from_range(0, 1))
 
-    print("Generate normal")
+    print("\nGenerate normal")
     for num in lcg.generate_normal(15, (3, 5)):
         print(num)
+
+    print("\nBits")
+    for bit in lcg.generate_bits(15):
+        print(bit)
