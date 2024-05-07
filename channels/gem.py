@@ -1,8 +1,7 @@
-from channels import ChannelModel
+import time
 from typing import Optional
 
-import time
-import codes
+from channels import ChannelModel
 
 
 class GilbertElliotModel(ChannelModel):

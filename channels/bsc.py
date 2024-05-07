@@ -1,8 +1,7 @@
 import time
-
-import codes
-from channels import ChannelModel
 from typing import Optional
+
+from channels import ChannelModel
 
 
 class BinarySymmetricChannel(ChannelModel):

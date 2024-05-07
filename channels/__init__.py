@@ -1,8 +1,7 @@
-from typing import Optional
-from utils.rng import LinearCongruentialGenerator
-
-import codes
 import time
+from typing import Optional
+
+from utils.rng import LinearCongruentialGenerator
 
 
 class ChannelModel:
