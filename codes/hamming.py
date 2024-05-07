@@ -100,6 +100,8 @@ if __name__ == "__main__":
         try:
             encoded_chunk = hcd.encode_chunk(chunk)
             # print(encoded_chunk)
+            err_pos = np.random.randint(0, hcd.total_bits + 1)
+            encoded_chunk[err_pos] = int(not encoded_chunk[err_pos])
             decoded_chunk = hcd.decode_chunk(encoded_chunk)
             assert chunk == decoded_chunk, f"wanted: {chunk}, have: {decoded_chunk}"
         except AssertionError as err:
@@ -112,6 +114,8 @@ if __name__ == "__main__":
         try:
             encoded_chunk = hcd.encode_chunk(chunk)
             # print(encoded_chunk)
+            err_pos = np.random.randint(0, hcd.total_bits + 1)
+            encoded_chunk[err_pos] = int(not encoded_chunk[err_pos])
             decoded_chunk = hcd.decode_chunk(encoded_chunk)
             assert chunk == decoded_chunk, f"wanted: {chunk}, have: {decoded_chunk}"
         except AssertionError as err:
@@ -124,6 +128,8 @@ if __name__ == "__main__":
         try:
             encoded_chunk = hcd.encode(chunk)
             # print(encoded_chunk)
+            err_pos = np.random.randint(0, len(messages[0]))
+            encoded_chunk[err_pos] = int(not encoded_chunk[err_pos])
             decoded_chunk = hcd.decode(encoded_chunk)
             assert chunk == decoded_chunk, f"wanted: {chunk}, have: {decoded_chunk}"
         except AssertionError as err:
@@ -136,6 +142,8 @@ if __name__ == "__main__":
         try:
             encoded_chunk = hcd.encode(chunk)
             # print(encoded_chunk)
+            err_pos = np.random.randint(0, len(messages[0]))
+            encoded_chunk[err_pos] = int(not encoded_chunk[err_pos])
             decoded_chunk = hcd.decode(encoded_chunk)
             assert chunk == decoded_chunk, f"wanted: {chunk}, have: {decoded_chunk}"
         except AssertionError as err:
