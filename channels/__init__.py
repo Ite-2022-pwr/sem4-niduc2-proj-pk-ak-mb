@@ -10,13 +10,11 @@ class ChannelModel:
     def __init__(
         self,
         name: str,
-        noise_percentage: int,
         rng_seed: Optional[int] = int(time.time()),
         coder_decoder: Optional["codes.CoderDecoder"] = None,
     ):
         self.name = name
         self.rng = LinearCongruentialGenerator(seed=rng_seed)
-        self.noise_percentage = noise_percentage
         self.coder_decoder = coder_decoder
 
     def transmit(self, message: list[int]) -> list[int]:

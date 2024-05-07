@@ -2,7 +2,6 @@ import time
 
 import codes
 from channels import ChannelModel
-from utils.rng import LinearCongruentialGenerator
 from typing import Optional
 
 
@@ -12,10 +11,11 @@ class BinarySymmetricChannel(ChannelModel):
         self,
         name: str,
         noise_percentage: int,
-        seed: int,
+        seed: Optional[int] = int(time.time()),
         coder_decoder: Optional[codes.CoderDecoder] = None,
     ):
         super().__init__(name, noise_percentage, seed, coder_decoder)
+        self.noise_percentage = noise_percentage
 
     def transmit(self, message: list[int]) -> list[int]:
         noisy_message = []
@@ -36,7 +36,7 @@ class BinarySymmetricChannel(ChannelModel):
 
 
 if __name__ == "__main__":
-    bsc = BinarySymmetricChannel(2, int(time.time()))
+    bsc = BinarySymmetricChannel("BSC", 2, seed=int(time.time()))
     message = []
     n = 1000000
     for i in range(n):
