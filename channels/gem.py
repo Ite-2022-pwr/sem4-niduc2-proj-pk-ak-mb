@@ -10,54 +10,79 @@ class GilbertElliotModel(ChannelModel):
         name: str,
         error_percentage: int,
         error_repetition_percentage: int,
+        verbose: Optional[bool] = False,
         seed: Optional[int] = int(time.time()),
     ):
         super().__init__(name, seed)
         self.error_percentage = error_percentage
         self.error_repetition_percentage = error_repetition_percentage
         self.state = 0  # 0 - good state, 1 - error state
+        self.verbose = verbose
+        self.good_error_change = 0
+        self.error_good_change = 0
+        self.good_repetition = 0
+        self.error_repetition = 0
 
     def transmit(self, message: list[int]) -> list[int]:
         noisy_message = []
-        good_error_change = 0
-        error_good_change = 0
-        good_repetition = 0
-        error_repetition = 0
+        self.good_error_change = 0
+        self.error_good_change = 0
+        self.good_repetition = 0
+        self.error_repetition = 0
         for bit in message:
             random_value = self.rng.next_int_from_range(0, 100)
             if self.state == 0:
                 if random_value > (100 - self.error_percentage):
                     self.state = 1
-                    good_error_change += 1
+                    self.good_error_change += 1
                     noisy_message.append(1 if bit == 0 else 0)
                 else:
-                    good_repetition += 1
+                    self.good_repetition += 1
                     noisy_message.append(bit)
             else:
                 if random_value > (100 - self.error_repetition_percentage):
-                    error_repetition += 1
+                    self.error_repetition += 1
                     noisy_message.append(1 if bit == 0 else 0)
                 else:
                     self.state = 0
-                    error_good_change += 1
+                    self.error_good_change += 1
                     noisy_message.append(bit)
-        print(f"good_error_change: {good_error_change}")
-        print(
-            f"good_error_change in percentage: {good_error_change / (good_repetition + good_error_change) * 100}%\n"
-        )
-        print(f"error_good_change: {error_good_change}")
-        print(
-            f"error_good_change in percentage: {error_good_change / (error_repetition + error_good_change) * 100}%\n"
-        )
-        print(f"good_repetition: {good_repetition}")
-        print(
-            f"good_repetition in percentage: {good_repetition / (good_repetition + good_error_change) * 100}%\n"
-        )
-        print(f"error_repetition: {error_repetition}")
-        print(
-            f"error_repetition in percentage: {error_repetition / (error_repetition + error_good_change) * 100}%\n"
-        )
+        self.print_verbose()
         return noisy_message
+
+    def print_verbose(self):
+        print(f"Good to error state changes: {self.good_error_change}")
+        print(f"Error to good state changes: {self.error_good_change}")
+        print(f"Good state repetitions: {self.good_repetition}")
+        print(f"Error state repetitions: {self.error_repetition}")
+        print(f"good_error_change: {self.good_error_change}")
+        try:
+            print(
+                f"good_error_change in percentage: {self.good_error_change / (self.good_repetition + self.good_error_change) * 100}%\n"
+            )
+        except ZeroDivisionError:
+            print("self.good_error_change in percentage: 0%\n")
+        print(f"error_good_change: {self.error_good_change}")
+        try:
+            print(
+                f"error_good_change in percentage: {self.error_good_change / (self.error_repetition + self.error_good_change) * 100}%\n"
+            )
+        except ZeroDivisionError:
+            print("self.error_good_change in percentage: 0%\n")
+        print(f"good_repetition: {self.good_repetition}")
+        try:
+            print(
+                f"good_repetition in percentage: {self.good_repetition / (self.good_repetition + self.good_error_change) * 100}%\n"
+            )
+        except ZeroDivisionError:
+            print("self.good_repetition in percentage: 0%\n")
+        print(f"error_repetition: {self.error_repetition}")
+        try:
+            print(
+                f"error_repetition in percentage: {self.error_repetition / (self.error_repetition + self.error_good_change) * 100}%\n"
+            )
+        except ZeroDivisionError:
+            print("self.error_repetition in percentage: 0%\n")
 
 
 if __name__ == "__main__":

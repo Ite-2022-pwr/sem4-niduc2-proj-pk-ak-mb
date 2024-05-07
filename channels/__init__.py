@@ -9,9 +9,11 @@ class ChannelModel:
     def __init__(
         self,
         name: str,
+        verbose: Optional[bool] = False,
         rng_seed: Optional[int] = int(time.time()),
     ):
         self.name = name
+        self.verbose = verbose
         self.rng = LinearCongruentialGenerator(seed=rng_seed)
 
     def transmit(self, message: list[int]) -> list[int]:
@@ -22,6 +24,9 @@ class ChannelModel:
 
     def regenerate_rng_with_time(self):
         self.rng = LinearCongruentialGenerator(int(time.time()))
+
+    def print_verbose(self):
+        raise NotImplementedError("Method not implemented")
 
     def __str__(self):
         return self.name

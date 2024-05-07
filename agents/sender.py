@@ -24,23 +24,54 @@ class Sender(SimulationAgent):
             self.fragmented_message_chunks.append(self.message[i : i + self.chunk_size])
 
     def send_raw_whole(self):
+        self.receiver.prepare_to_receive()
         self.receiver.receive_whole(self.channel.transmit(self.message))
 
     def send_raw_in_chunks(self):
-        if self.fragmented_message_chunks.empty():
+        self.receiver.prepare_to_receive()
+        if len(self.fragmented_message_chunks) == 0:
             self.fragment_message()
+        self.receiver.chunk_size = self.chunk_size
         for chunk in self.fragmented_message_chunks:
             self.receiver.receive_chunk(self.channel.transmit(chunk))
 
     def send_encoded_whole(self):
-        self.receiver.receive_whole_encoded(
+        self.receiver.prepare_to_receive()
+        self.receiver.receive_whole(
             self.channel.transmit(self.coderDecoder.encode(self.message))
         )
 
     def send_coded_in_chunks(self):
-        if self.fragmented_message_chunks.empty():
+        self.receiver.prepare_to_receive()
+        if len(self.fragmented_message_chunks) == 0:
             self.fragment_message()
+        self.receiver.chunk_size = self.chunk_size
         for chunk in self.fragmented_message_chunks:
-            self.receiver.receive_chunk_encoded(
+            self.receiver.receive_chunk(
                 self.channel.transmit(self.coderDecoder.encode(chunk))
             )
+
+
+if __name__ == "__main__":
+    from channels.gem import GilbertElliotModel
+    from channels.bsc import BinarySymmetricChannel
+    from agents.receiver import Receiver
+    from utils.rng import LinearCongruentialGenerator
+
+    import time
+
+    receiver = Receiver("Receiver")
+    gem = GilbertElliotModel("GEM", 4, 1, verbose=True)
+    bsc = BinarySymmetricChannel("BSC", 2, verbose=True)
+    sender = Sender("Sender", receiver, bsc, 8)
+    new_rng = LinearCongruentialGenerator(seed=int(time.time()))
+    n = 1000000
+    message = list(new_rng.generate_bits(n))
+    sender.set_message(message)
+    sender.send_raw_in_chunks()
+    receiver.restore_message_from_chunks()
+    print(sum([1 for i in range(n) if message[i] != receiver.message[i]]) / n * 100)
+    sender.set_message(message)
+    sender.send_raw_whole()
+    receiver.restore_message_from_chunks()
+    print(sum([1 for i in range(n) if message[i] != receiver.message[i]]) / n * 100)
