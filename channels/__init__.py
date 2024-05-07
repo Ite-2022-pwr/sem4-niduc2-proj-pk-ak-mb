@@ -11,16 +11,11 @@ class ChannelModel:
         self,
         name: str,
         rng_seed: Optional[int] = int(time.time()),
-        coder_decoder: Optional["codes.CoderDecoder"] = None,
     ):
         self.name = name
         self.rng = LinearCongruentialGenerator(seed=rng_seed)
-        self.coder_decoder = coder_decoder
 
     def transmit(self, message: list[int]) -> list[int]:
-        raise NotImplementedError("Method not implemented")
-
-    def transmit_with_coding(self, message: list[int]) -> list[int]:
         raise NotImplementedError("Method not implemented")
 
     def regenerate_rng(self, seed: int):

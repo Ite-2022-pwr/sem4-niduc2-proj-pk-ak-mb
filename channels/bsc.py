@@ -12,9 +12,8 @@ class BinarySymmetricChannel(ChannelModel):
         name: str,
         noise_percentage: int,
         seed: Optional[int] = int(time.time()),
-        coder_decoder: Optional[codes.CoderDecoder] = None,
     ):
-        super().__init__(name, noise_percentage, seed, coder_decoder)
+        super().__init__(name, seed)
         self.noise_percentage = noise_percentage
 
     def transmit(self, message: list[int]) -> list[int]:
@@ -26,13 +25,6 @@ class BinarySymmetricChannel(ChannelModel):
             else:
                 noisy_message.append(bit)
         return noisy_message
-
-    def transmit_with_coding(self, message: list[int]) -> list[int]:
-        if self.coder_decoder is None:
-            raise ValueError("CoderDecoder object is required for this method")
-        encoded_message = self.coder_decoder.encode(message)
-        noisy_message = self.transmit(encoded_message)
-        return self.coder_decoder.decode(noisy_message)
 
 
 if __name__ == "__main__":

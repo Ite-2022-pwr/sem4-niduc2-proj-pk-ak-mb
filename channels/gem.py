@@ -12,12 +12,11 @@ class GilbertElliotModel(ChannelModel):
         error_percentage: int,
         error_repetition_percentage: int,
         seed: Optional[int] = int(time.time()),
-        coder_decoder: Optional["codes.CoderDecoder"] = None,
     ):
-        super().__init__(name, seed, coder_decoder)
+        super().__init__(name, seed)
         self.error_percentage = error_percentage
         self.error_repetition_percentage = error_repetition_percentage
-        self.state = 0
+        self.state = 0  # 0 - good state, 1 - error state
 
     def transmit(self, message: list[int]) -> list[int]:
         noisy_message = []
@@ -60,13 +59,6 @@ class GilbertElliotModel(ChannelModel):
             f"error_repetition in percentage: {error_repetition / (error_repetition + error_good_change) * 100}%\n"
         )
         return noisy_message
-
-    def transmit_with_coding(self, message: list[int]) -> list[int]:
-        if self.coder_decoder is None:
-            raise ValueError("CoderDecoder object is required for this method")
-        encoded_message = self.coder_decoder.encode(message)
-        noisy_message = self.transmit(encoded_message)
-        return self.coder_decoder.decode(noisy_message)
 
 
 if __name__ == "__main__":
