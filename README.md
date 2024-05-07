@@ -85,3 +85,4 @@ $ pip freeze > requirements.txt
 ## Materiały
 
 - [Szymon Datko, Opracowanie symulatora](https://datko.pl/NiDUC2/etap1.pdf)
+- [3Blue1Brown - Hamming codes part 2: The one-line implementation](https://www.youtube.com/watch?v=b3NxrZOu_CE)
