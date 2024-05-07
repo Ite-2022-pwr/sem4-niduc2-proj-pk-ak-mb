@@ -1,21 +1,21 @@
 import time
 
 import codes
+from channels import ChannelModel
 from utils.rng import LinearCongruentialGenerator
 from typing import Optional
 
 
-class BinarySymmetricChannel:
+class BinarySymmetricChannel(ChannelModel):
 
     def __init__(
         self,
+        name: str,
         noise_percentage: int,
         seed: int,
         coder_decoder: Optional[codes.CoderDecoder] = None,
     ):
-        self.noise_percentage = noise_percentage
-        self.rng = LinearCongruentialGenerator(seed)
-        self.coder_decoder = coder_decoder
+        super().__init__(name, noise_percentage, seed, coder_decoder)
 
     def transmit(self, message: list[int]) -> list[int]:
         noisy_message = []
