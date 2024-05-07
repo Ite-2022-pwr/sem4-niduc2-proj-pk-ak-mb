@@ -1,14 +1,21 @@
 import time
 
+import codes
 from utils.rng import LinearCongruentialGenerator
-import matplotlib.pyplot as plt
+from typing import Optional
 
 
 class BinarySymmetricChannel:
 
-    def __init__(self, noise_percentage: int, seed: int):
+    def __init__(
+        self,
+        noise_percentage: int,
+        seed: int,
+        coder_decoder: Optional[codes.CoderDecoder] = None,
+    ):
         self.noise_percentage = noise_percentage
         self.rng = LinearCongruentialGenerator(seed)
+        self.coder_decoder = coder_decoder
 
     def transmit(self, message: list[int]) -> list[int]:
         noisy_message = []
@@ -20,6 +27,13 @@ class BinarySymmetricChannel:
                 noisy_message.append(bit)
         return noisy_message
 
+    def transmit_with_coding(self, message: list[int]) -> list[int]:
+        if self.coder_decoder is None:
+            raise ValueError("CoderDecoder object is required for this method")
+        encoded_message = self.coder_decoder.encode(message)
+        noisy_message = self.transmit(encoded_message)
+        return self.coder_decoder.decode(noisy_message)
+
 
 if __name__ == "__main__":
     bsc = BinarySymmetricChannel(2, int(time.time()))
@@ -28,4 +42,4 @@ if __name__ == "__main__":
     for i in range(n):
         message.append(bsc.rng.next_int_from_range(0, 1))
     noisy_message = bsc.transmit(message)
-    print(sum([1 for i in range(n) if message[i] != noisy_message[i]])/n*100)
+    print(sum([1 for i in range(n) if message[i] != noisy_message[i]]) / n * 100)
