@@ -1,9 +1,9 @@
 from typing import Optional
 import codes
-import channels
 
 from agents import SimulationAgent
 from agents.receiver import Receiver
+from channels import ChannelModel
 
 
 class Sender(SimulationAgent):
@@ -11,7 +11,7 @@ class Sender(SimulationAgent):
         self,
         name: str,
         receiver: Receiver,
-        channel: channels.ChannelModel,
+        channel: ChannelModel,
         chunk_size: int = 8,
         coder_decoder: Optional[codes.CoderDecoder] = None,
     ):
@@ -95,10 +95,10 @@ if __name__ == "__main__":
     print(f"chunks_with_error_detected: {receiver.chunks_with_error_detected}")
     print(f"chunks_without_error_detected: {receiver.chunks_without_error_detected}")
     print(
-        f"chunks_with_fixed_error: {receiver.get_fixed_error_chunk_count(sender.fragmented_message_chunks)}"
+        f"chunks_with_fixed_error: {receiver.get_error_chunk_count(sender.fragmented_message_chunks, True)}"
     )
     print(
-        f"chunks_with_unfixed_error: {receiver.get_unfixed_error_chunk_count(sender.fragmented_message_chunks)}"
+        f"chunks_with_unfixed_error: {receiver.get_error_chunk_count(sender.fragmented_message_chunks, False)}"
     )
     print(
         f"chunks_with_missed_error: {receiver.get_missed_error_chunk_count(sender.fragmented_message_chunks)}"

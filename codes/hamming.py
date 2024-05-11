@@ -43,7 +43,6 @@ class HammingCoderDecoder(CoderDecoder):
             j += 1
 
         error_position = self.find_error_position(encoded_chunk)
-        # print(f"error_position: {error_position}")
         if error_position in [0] + self.parity_bits_positions:
             encoded_chunk[error_position] = int(not encoded_chunk[error_position])
         else:
