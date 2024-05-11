@@ -12,21 +12,27 @@ class Receiver(SimulationAgent):
         coder_decoder: Optional[CoderDecoder] = None,
     ):
         super().__init__(name, chunk_size, coder_decoder)
-        self.errors_found = 0
-        self.all_errors = 0
-        self.missed_errors = 0
         self.fragmented_message_chunks = []
         self.fragmented_message_chunks_encoded = []
-        self.chunks_with_detected_errors_positions = []
+        self.chunks_with_error_detected = 0
+        self.chunks_without_error_detected = 0
+        self.chunks_with_fixed_error = 0
+        self.chunks_without_fixed_error = 0
+        self.chunks_with_missed_error = 0
+        self.chunks_with_error_detected_position = []
+        self.chunks_without_error_detected_position = []
 
     def prepare_to_receive(self):
         self.message = []
         self.fragmented_message_chunks = []
         self.fragmented_message_chunks_encoded = []
-        self.chunks_with_detected_errors_positions = []
-        self.all_errors = 0
-        self.missed_errors = 0
-        self.errors_found = 0
+        self.chunks_with_error_detected = 0
+        self.chunks_without_error_detected = 0
+        self.chunks_with_fixed_error = 0
+        self.chunks_without_fixed_error = 0
+        self.chunks_with_missed_error = 0
+        self.chunks_with_error_detected_position = []
+        self.chunks_without_error_detected_position = []
 
     def receive_whole(self, message: list[int]):
         self.message = message
@@ -55,43 +61,63 @@ class Receiver(SimulationAgent):
             print(f"\nDecoded chunk: {temp[0]}")
             print(f"Errors found: {temp[1]}")
             if temp[1] != 0:
-                self.chunks_with_detected_errors_positions.append(i)
-                self.errors_found += temp[1]
+                self.chunks_with_error_detected += 1
+                self.chunks_with_error_detected_position.append(i)
+            else:
+                self.chunks_without_error_detected += 1
+                self.chunks_without_error_detected_position.append(i)
             i += 1
             self.fragmented_message_chunks.append(temp[0])
             for char in temp[0]:
                 self.message.append(char)
 
-    def get_all_errors_count(self, expected_message: list[int]) -> int:
-        return sum(
-            [
-                1
-                for i in range(len(self.message))
-                if self.message[i] != expected_message[i]
-            ]
-        )
-
-    def get_chunk_error_count(
-        self, chunk_to_check_pos: int, expected_chunk: list[int]
+    def get_error_in_chunk_count(
+        self, expected_chunk: list[int], received_chunk: list[int]
     ) -> int:
         return sum(
             [
                 1
-                for i in range(len(self.fragmented_message_chunks[chunk_to_check_pos]))
-                if self.fragmented_message_chunks[chunk_to_check_pos][i]
-                != expected_chunk[i]
+                for i in range(len(expected_chunk))
+                if expected_chunk[i] != received_chunk[i]
             ]
         )
 
-    def get_missed_errors_count(
-        self, expected_fragmented_message_chunks: list[list[int]]
+    def get_missed_error_chunk_count(
+        self, expected_chunks_list: list[list[int]]
     ) -> int:
-        i = 0
-        for chunk in self.fragmented_message_chunks:
-            self.missed_errors += self.get_chunk_error_count(
-                i, expected_fragmented_message_chunks[i]
-            )
-            if i in self.chunks_with_detected_errors_positions:
-                self.missed_errors = max(0, self.missed_errors - 1)
-            i += 1
-        return self.missed_errors
+        for chunk_pos in self.chunks_without_error_detected_position:
+            if (
+                self.get_error_in_chunk_count(
+                    expected_chunks_list[chunk_pos],
+                    self.fragmented_message_chunks[chunk_pos],
+                )
+                != 0
+            ):
+                self.chunks_with_missed_error += 1
+        return self.chunks_with_missed_error
+
+    def get_fixed_error_chunk_count(self, expected_chunks_list: list[list[int]]) -> int:
+        for chunk_pos in self.chunks_with_error_detected_position:
+            if (
+                self.get_error_in_chunk_count(
+                    expected_chunks_list[chunk_pos],
+                    self.fragmented_message_chunks[chunk_pos],
+                )
+                == 0
+            ):
+                self.chunks_with_fixed_error += 1
+        return self.chunks_with_fixed_error
+
+    def get_unfixed_error_chunk_count(
+        self, expected_chunks_list: list[list[int]]
+    ) -> int:
+        for chunk_pos in self.chunks_with_error_detected_position:
+            if (
+                self.get_error_in_chunk_count(
+                    expected_chunks_list[chunk_pos],
+                    self.fragmented_message_chunks[chunk_pos],
+                )
+                != 0
+            ):
+                self.chunks_without_fixed_error += 1
+        return self.chunks_without_fixed_error

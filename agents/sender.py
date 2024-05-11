@@ -68,7 +68,7 @@ if __name__ == "__main__":
     hamming = HammingCoderDecoder(7, 4)
     receiver = Receiver("Receiver", 4, hamming)
     gem = GilbertElliotModel("GEM", 4, 1, verbose=False)
-    bsc = BinarySymmetricChannel("BSC", 20, verbose=True)
+    bsc = BinarySymmetricChannel("BSC", 4, verbose=True)
     sender = Sender(
         "Sender",
         receiver,
@@ -77,7 +77,7 @@ if __name__ == "__main__":
         hamming,
     )
     new_rng = LinearCongruentialGenerator(seed=int(time.time()))
-    n = 16
+    n = 1000
     message = list(new_rng.generate_bits(n))
     sender.set_message(message)
     sender.send_coded_in_chunks()
@@ -87,8 +87,14 @@ if __name__ == "__main__":
     print(f"\nmessage==receiver.message:{message == receiver.message}")
     errors = sum([1 for i in range(n) if message[i] != receiver.message[i]])
     print(f"procent błędu faktycznych po dekodowaniu: {errors / n * 100}\n")
-    print(f"liczba wykryć błędu: {receiver.errors_found}")
-    print(f"błędów ogólnie: {errors}")
+    print(f"chunks_with_error_detected: {receiver.chunks_with_error_detected}")
+    print(f"chunks_without_error_detected: {receiver.chunks_without_error_detected}")
     print(
-        f"błędów niewykrytych: {receiver.get_missed_errors_count(sender.fragmented_message_chunks)}"
+        f"chunks_with_fixed_error: {receiver.get_fixed_error_chunk_count(sender.fragmented_message_chunks)}"
+    )
+    print(
+        f"chunks_with_unfixed_error: {receiver.get_unfixed_error_chunk_count(sender.fragmented_message_chunks)}"
+    )
+    print(
+        f"chunks_with_missed_error: {receiver.get_missed_error_chunk_count(sender.fragmented_message_chunks)}"
     )
