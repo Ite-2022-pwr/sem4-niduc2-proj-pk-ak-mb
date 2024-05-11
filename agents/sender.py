@@ -57,19 +57,30 @@ if __name__ == "__main__":
     from channels.bsc import BinarySymmetricChannel
     from agents.receiver import Receiver
     from utils.rng import LinearCongruentialGenerator
+    from codes.hamming import HammingCoderDecoder
 
     import time
 
-    receiver = Receiver("Receiver")
+    hamming = HammingCoderDecoder()
+    receiver = Receiver("Receiver", 7, hamming)
     gem = GilbertElliotModel("GEM", 4, 1, verbose=True)
     bsc = BinarySymmetricChannel("BSC", 2, verbose=True)
-    sender = Sender("Sender", receiver, bsc, 8)
+    sender = Sender(
+        "Sender",
+        receiver,
+        bsc,
+        7,
+        hamming,
+    )
     new_rng = LinearCongruentialGenerator(seed=int(time.time()))
     n = 1000000
     message = list(new_rng.generate_bits(n))
     sender.set_message(message)
-    sender.send_raw_in_chunks()
-    receiver.restore_message_from_chunks()
+    sender.send_coded_in_chunks()
+    print(receiver.fragmented_message_chunks)
+    receiver.restore_message_from_chunks_encoded()
+    print(message)
+    print(receiver.message)
     print(sum([1 for i in range(n) if message[i] != receiver.message[i]]) / n * 100)
     sender.set_message(message)
     sender.send_raw_whole()

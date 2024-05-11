@@ -1,9 +1,17 @@
+from typing import Optional
+
 from agents import SimulationAgent
+from codes import CoderDecoder
 
 
 class Receiver(SimulationAgent):
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(
+        self,
+        name: str,
+        chunk_size: Optional[int] = 8,
+        coder_decoder: Optional[CoderDecoder] = None,
+    ):
+        super().__init__(name, chunk_size, coder_decoder)
 
     def prepare_to_receive(self):
         self.message = []
