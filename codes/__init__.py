@@ -5,7 +5,7 @@ class CoderDecoder:
     def encode(self, message: list[int]) -> list[int]:
         raise NotImplementedError("Method not implemented")
 
-    def decode(self, message: list[int]) -> list[int]:
+    def decode(self, message: list[int]) -> list[int] | int:
         raise NotImplementedError("Method not implemented")
 
     def __str__(self):

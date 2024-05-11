@@ -31,14 +31,18 @@ class BinarySymmetricChannel(ChannelModel):
             else:
                 noisy_message.append(bit)
                 self.bits_not_flipped += 1
-        self.print_verbose()
+        if self.verbose:
+            self.print_verbose()
+        print(f"Message:\t\t {message}")
+        print(f"Noisy message:\t {noisy_message}")
         return noisy_message
 
     def print_verbose(self):
+        print(f"\nBinary Symmetric Channel: {self.name}")
         print(f"Bits flipped: {self.bits_flipped}")
         print(f"Bits not flipped: {self.bits_not_flipped}")
         print(
-            f"Bits flipped in percentage: {self.bits_flipped / (self.bits_flipped + self.bits_not_flipped) * 100}%\n"
+            f"Bits flipped in percentage: {self.bits_flipped / (self.bits_flipped + self.bits_not_flipped) * 100}%"
         )
 
 

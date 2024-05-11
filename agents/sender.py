@@ -20,6 +20,10 @@ class Sender(SimulationAgent):
         self.channel = channel
 
     def fragment_message(self):
+        if len(self.message) % self.chunk_size != 0:
+            pad_length = self.chunk_size - len(self.message) % self.chunk_size
+            self.message += [0] * pad_length
+            print(f"Padding message with {pad_length} zeros")
         for i in range(0, len(self.message), self.chunk_size):
             self.fragmented_message_chunks.append(self.message[i : i + self.chunk_size])
 
@@ -47,7 +51,7 @@ class Sender(SimulationAgent):
             self.fragment_message()
         self.receiver.chunk_size = self.chunk_size
         for chunk in self.fragmented_message_chunks:
-            self.receiver.receive_chunk(
+            self.receiver.receive_chunk_encoded(
                 self.channel.transmit(self.coderDecoder.encode(chunk))
             )
 
@@ -61,28 +65,30 @@ if __name__ == "__main__":
 
     import time
 
-    hamming = HammingCoderDecoder()
-    receiver = Receiver("Receiver", 7, hamming)
-    gem = GilbertElliotModel("GEM", 4, 1, verbose=True)
-    bsc = BinarySymmetricChannel("BSC", 2, verbose=True)
+    hamming = HammingCoderDecoder(7, 4)
+    receiver = Receiver("Receiver", 4, hamming)
+    gem = GilbertElliotModel("GEM", 4, 1, verbose=False)
+    bsc = BinarySymmetricChannel("BSC", 20, verbose=True)
     sender = Sender(
         "Sender",
         receiver,
         bsc,
-        7,
+        4,
         hamming,
     )
     new_rng = LinearCongruentialGenerator(seed=int(time.time()))
-    n = 1000000
+    n = 16
     message = list(new_rng.generate_bits(n))
     sender.set_message(message)
     sender.send_coded_in_chunks()
-    print(receiver.fragmented_message_chunks)
     receiver.restore_message_from_chunks_encoded()
-    print(message)
-    print(receiver.message)
-    print(sum([1 for i in range(n) if message[i] != receiver.message[i]]) / n * 100)
-    sender.set_message(message)
-    sender.send_raw_whole()
-    receiver.restore_message_from_chunks()
-    print(sum([1 for i in range(n) if message[i] != receiver.message[i]]) / n * 100)
+    print(f"message: \t\t\t{message}")
+    print(f"receiver.message: \t{receiver.message}")
+    print(f"\nmessage==receiver.message:{message == receiver.message}")
+    errors = sum([1 for i in range(n) if message[i] != receiver.message[i]])
+    print(f"procent błędu faktycznych po dekodowaniu: {errors / n * 100}\n")
+    print(f"liczba wykryć błędu: {receiver.errors_found}")
+    print(f"błędów ogólnie: {errors}")
+    print(
+        f"błędów niewykrytych: {receiver.get_missed_errors_count(sender.fragmented_message_chunks)}"
+    )

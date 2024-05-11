@@ -6,6 +6,8 @@ sys.path.append(os.path.dirname(__SCRIPT_DIR))
 
 from functools import reduce
 
+from utils.misc import binary_representation
+
 
 from codes import CoderDecoder
 
@@ -21,7 +23,7 @@ class HammingCoderDecoder(CoderDecoder):
     def calculate_parity_bits_positions(self) -> list[int]:
         return [2**i for i in range(self.parity_bits) if 2**i <= self.total_bits]
 
-    def find_error_position(self, chunk: list[int]) -> list[int]:
+    def find_error_position(self, chunk: list[int]) -> int:
         return (
             reduce(lambda a, b: a ^ b, [i for i, bit in enumerate(chunk) if bit])
             if sum(chunk) != 0
@@ -43,6 +45,7 @@ class HammingCoderDecoder(CoderDecoder):
             j += 1
 
         error_position = self.find_error_position(encoded_chunk)
+        # print(f"error_position: {error_position}")
         if error_position in [0] + self.parity_bits_positions:
             encoded_chunk[error_position] = int(not encoded_chunk[error_position])
         else:
@@ -58,12 +61,12 @@ class HammingCoderDecoder(CoderDecoder):
             raise ValueError(
                 f"Size of the chunk must be equal a number of total bits + 1 ({self.total_bits + 1}) - {len(chunk)}"
             )
-
-        error_position = self.find_error_position(chunk)
-        chunk[error_position] = int(not chunk[error_position])
+        chunk_copy = chunk.copy()
+        error_position = self.find_error_position(chunk_copy)
+        chunk_copy[error_position] = int(not chunk_copy[error_position])
         return [
             bit
-            for i, bit in enumerate(chunk)
+            for i, bit in enumerate(chunk_copy)
             if i not in [0] + self.parity_bits_positions
         ]
 
@@ -78,16 +81,24 @@ class HammingCoderDecoder(CoderDecoder):
             encoded_message.extend(chunk)
         return encoded_message
 
-    def decode(self, message: list[int]) -> list[int]:
+    def decode(self, message: list[int]) -> tuple[list[int], int]:
         if len(message) % (self.total_bits + 1) != 0:
             raise ValueError(
-                f"Size of a message must be dividable by a number of total bits + 1 ({self.total_bits + 1})"
+                f"Size of a message must be divisible by a number of total bits + 1 ({self.total_bits + 1})"
             )
         decoded_message = []
+        errors_found = 0
         for i in range(0, len(message), self.total_bits + 1):
-            chunk = self.decode_chunk(message[i : i + self.total_bits + 1])
+            pre_decoded_chunk = message[i : i + self.total_bits + 1]
+            if self.find_error_position(pre_decoded_chunk) != 0:
+                errors_found += 1
+            chunk = self.decode_chunk(pre_decoded_chunk)
+            print(f"pre_decoded_chunk: {pre_decoded_chunk}")
+            print(
+                f"pre_decoded_chunk error pos: {self.find_error_position(pre_decoded_chunk)}"
+            )
             decoded_message.extend(chunk)
-        return decoded_message
+        return decoded_message, errors_found
 
 
 if __name__ == "__main__":
