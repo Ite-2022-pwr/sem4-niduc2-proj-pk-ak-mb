@@ -1,7 +1,6 @@
+import math
 import os
 import time
-import math
-
 from typing import Generator
 
 
