@@ -64,15 +64,21 @@ if __name__ == "__main__":
 
     import time
 
-    hamming = HammingCoderDecoder(15, 11)
-    receiver = Receiver("Receiver", 11, hamming)
+    parity_bits = 3
+    total_bits = 2**parity_bits - 1
+    data_bits = total_bits - parity_bits
+    bits_to_generate = 11000
+
+    hamming = HammingCoderDecoder(total_bits, data_bits)
+    print(f"Hamming, total_bits: {total_bits}, data_bits: {data_bits}")
+    receiver = Receiver("Receiver", data_bits, hamming)
     gem = GilbertElliotModel("GEM", 1, 1, verbose=False)
     bsc = BinarySymmetricChannel("BSC", 4, verbose=False)
     sender = Sender(
         "Sender",
         receiver,
         gem,
-        11,
+        data_bits,
         hamming,
     )
     new_rng = LinearCongruentialGenerator(seed=int(time.time()))

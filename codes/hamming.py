@@ -153,3 +153,9 @@ if __name__ == "__main__":
             assert chunk == decoded_chunk, f"wanted: {chunk}, have: {decoded_chunk}"
         except AssertionError as err:
             print(err)
+
+    def __str__(self) -> str:
+        return f"HammingCoderDecoder(total_bits={self.total_bits}, data_bits={self.data_bits})"
+
+    def __repr__(self) -> str:
+        return f"HammingCoderDecoder(total_bits={self.total_bits}, data_bits={self.data_bits})"
