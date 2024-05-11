@@ -51,9 +51,8 @@ class Sender(SimulationAgent):
             self.fragment_message()
         self.receiver.chunk_size = self.chunk_size
         for chunk in self.fragmented_message_chunks:
-            self.receiver.receive_chunk_encoded(
-                self.channel.transmit(self.coderDecoder.encode(chunk))
-            )
+            encoded_chunk = self.coderDecoder.encode(chunk)
+            self.receiver.receive_chunk_encoded(self.channel.transmit(encoded_chunk))
 
 
 if __name__ == "__main__":
@@ -65,19 +64,19 @@ if __name__ == "__main__":
 
     import time
 
-    hamming = HammingCoderDecoder(7, 4)
-    receiver = Receiver("Receiver", 4, hamming)
-    gem = GilbertElliotModel("GEM", 4, 1, verbose=False)
-    bsc = BinarySymmetricChannel("BSC", 4, verbose=True)
+    hamming = HammingCoderDecoder(15, 11)
+    receiver = Receiver("Receiver", 11, hamming)
+    gem = GilbertElliotModel("GEM", 1, 1, verbose=False)
+    bsc = BinarySymmetricChannel("BSC", 4, verbose=False)
     sender = Sender(
         "Sender",
         receiver,
-        bsc,
-        4,
+        gem,
+        11,
         hamming,
     )
     new_rng = LinearCongruentialGenerator(seed=int(time.time()))
-    n = 1000
+    n = 11000
     message = list(new_rng.generate_bits(n))
     sender.set_message(message)
     sender.send_coded_in_chunks()
@@ -86,7 +85,7 @@ if __name__ == "__main__":
     print(f"receiver.message: \t{receiver.message}")
     print(f"\nmessage==receiver.message:{message == receiver.message}")
     errors = sum([1 for i in range(n) if message[i] != receiver.message[i]])
-    print(f"procent błędu faktycznych po dekodowaniu: {errors / n * 100}\n")
+    print(f"\nprocent błędu faktycznych po dekodowaniu: {errors / n * 100}%\n")
     print(f"chunks_with_error_detected: {receiver.chunks_with_error_detected}")
     print(f"chunks_without_error_detected: {receiver.chunks_without_error_detected}")
     print(

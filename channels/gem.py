@@ -47,7 +47,8 @@ class GilbertElliotModel(ChannelModel):
                     self.state = 0
                     self.error_good_change += 1
                     noisy_message.append(bit)
-        self.print_verbose()
+        if self.verbose:
+            self.print_verbose()
         return noisy_message
 
     def print_verbose(self):

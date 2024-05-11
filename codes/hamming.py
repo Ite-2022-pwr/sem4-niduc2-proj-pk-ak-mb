@@ -6,8 +6,6 @@ sys.path.append(os.path.dirname(__SCRIPT_DIR))
 
 from functools import reduce
 
-from utils.misc import binary_representation
-
 
 from codes import CoderDecoder
 
@@ -93,10 +91,6 @@ class HammingCoderDecoder(CoderDecoder):
             if self.find_error_position(pre_decoded_chunk) != 0:
                 errors_found += 1
             chunk = self.decode_chunk(pre_decoded_chunk)
-            print(f"pre_decoded_chunk: {pre_decoded_chunk}")
-            print(
-                f"pre_decoded_chunk error pos: {self.find_error_position(pre_decoded_chunk)}"
-            )
             decoded_message.extend(chunk)
         return decoded_message, errors_found
 

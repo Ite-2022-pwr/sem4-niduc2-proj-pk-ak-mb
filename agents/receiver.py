@@ -38,11 +38,9 @@ class Receiver(SimulationAgent):
         self.message = message
 
     def receive_chunk(self, message: list[int]):
-        print(f"Received chunk: {message}")
         self.fragmented_message_chunks.append(message)
 
     def receive_chunk_encoded(self, message: list[int]):
-        print(f"Received encoded chunk: {message}")
         self.fragmented_message_chunks_encoded.append(message)
 
     def decode_message(self):
@@ -56,10 +54,7 @@ class Receiver(SimulationAgent):
     def restore_message_from_chunks_encoded(self):
         i = 0
         for chunk in self.fragmented_message_chunks_encoded:
-            print(f"\nChunk to decode: {chunk}")
             temp = self.coderDecoder.decode(chunk)
-            print(f"\nDecoded chunk: {temp[0]}")
-            print(f"Errors found: {temp[1]}")
             if temp[1] != 0:
                 self.chunks_with_error_detected += 1
                 self.chunks_with_error_detected_position.append(i)
