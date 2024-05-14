@@ -23,16 +23,16 @@ class Receiver(SimulationAgent):
         self.chunks_without_error_detected_position = []
 
     def prepare_to_receive(self) -> None:
-        self.message = []
-        self.fragmented_message_chunks = []
-        self.fragmented_message_chunks_encoded = []
+        self.message.clear()
+        self.fragmented_message_chunks.clear()
+        self.fragmented_message_chunks_encoded.clear()
         self.chunks_with_error_detected = 0
         self.chunks_without_error_detected = 0
         self.chunks_with_fixed_error = 0
         self.chunks_without_fixed_error = 0
         self.chunks_with_missed_error = 0
-        self.chunks_with_error_detected_position = []
-        self.chunks_without_error_detected_position = []
+        self.chunks_with_error_detected_position.clear()
+        self.chunks_without_error_detected_position.clear()
 
     def receive_whole(self, message: list[int]) -> None:
         self.message = message

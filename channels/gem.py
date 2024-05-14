@@ -31,6 +31,9 @@ class GilbertElliotModel(ChannelModel):
         self.error_repetition = 0
         for bit in message:
             random_value = self.rng.next_int_from_range(0, 100)
+            if self.verbose:
+                stateName = "good" if self.state == 0 else "error"
+                print(f"State: {stateName}")
             if self.state == 0:
                 if random_value > (100 - self.error_percentage):
                     self.state = 1
