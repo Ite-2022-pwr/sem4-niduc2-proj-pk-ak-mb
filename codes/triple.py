@@ -10,30 +10,34 @@ sys.path.append(os.path.dirname(__SCRIPT_DIR))
 from functools import reduce
 from codes import CoderDecoder
 
+
 class TripleCoderDecoder(CoderDecoder):
     def __init__(self):
         super().__init__(name="triple")
 
     def encode(self, message: list[int]) -> list[int]:
-        return array([[i for i in message for j in range(0, 3)]])
+        encoded = []
+        for bit in message:
+            encoded.extend([bit] * 3)
+        return encoded
 
-    def decode_triple(codded_message):
-        decodded_message = []
-        list = codded_message[0]
-        for i in range(0, len(list), 3):
-            counter = Counter()
-            for j in range(0, 3):
-                counter[list[i + j]] += 1
+    def decode(self, codded_message: list[int]) -> list[int]:
+        decoded = []
+        for i in range(0, len(codded_message), 3):
+            chunk = codded_message[i : i + 3]
+            decoded.append(max(set(chunk), key=chunk.count))
+        return decoded
 
-            value, times = zip(*counter.most_common())
-            decodded_message.append(value[0])
-            counter.clear()
-        return decodded_message
+    def __str__(self) -> str:
+        return "TripleCoderDecoder"
+
 
 if __name__ == "__main__":
-    def __str__(self) -> str:
-        return "TripleCoderDekoder"
-
-    def __repr__(self) -> str:
-        return "TripleCoderDekoder"
-
+    message = [1, 0, 1, 0, 0, 1, 1, 1]
+    coder_decoder = TripleCoderDecoder()
+    encoded = coder_decoder.encode(message)
+    decoded = coder_decoder.decode(encoded)
+    print(f"Message: {message}")
+    print(f"Encoded: {encoded}")
+    print(f"Decoded: {decoded}")
+    print(f"Message == Decoded: {message == decoded}")
