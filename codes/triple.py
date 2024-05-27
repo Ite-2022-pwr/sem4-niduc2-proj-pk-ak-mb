@@ -21,10 +21,10 @@ class TripleCoderDecoder(CoderDecoder):
             encoded.extend([bit] * 3)
         return encoded
 
-    def decode(self, codded_message: list[int]) -> list[int]:
+    def decode(self, coded: list[int]) -> list[int]:
         decoded = []
-        for i in range(0, len(codded_message), 3):
-            chunk = codded_message[i : i + 3]
+        for i in range(0, len(coded), 3):
+            chunk = coded[i : i + 3]
             decoded.append(max(set(chunk), key=chunk.count))
         return decoded
 
