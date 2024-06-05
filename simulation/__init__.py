@@ -163,7 +163,7 @@ def run_test(
     new_rng = LinearCongruentialGenerator(seed=rng_seed)
     results = [
         [
-            "lp.",
+            "no.",
             "chunks",
             "no_errors",
             "errors",
