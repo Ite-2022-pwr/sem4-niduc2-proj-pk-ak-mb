@@ -14,12 +14,14 @@ from codes.triple import TripleCoderDecoder
 from codes import CoderDecoder
 from utils import csvSaver
 from datetime import datetime
+from pathlib import Path
 
 
 def simulation() -> None:
     now = datetime.now()
     now_string = now.strftime("%H_%M_%S_%d_%m_%Y")
-    current_path = os.path.dirname(os.path.abspath(__file__))
+    current_path = str(Path().absolute())
+    print(f"Current path where result folder will be created: {current_path}")
     test_results_path = current_path + "/results_" + now_string
     os.mkdir(test_results_path)
     os.chdir(test_results_path)
