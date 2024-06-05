@@ -80,6 +80,7 @@ class Receiver(SimulationAgent):
     def get_missed_error_chunk_count(
         self, expected_chunks_list: list[list[int]]
     ) -> int:
+        self.chunks_with_missed_error = 0
         for chunk_pos in self.chunks_without_error_detected_position:
             if (
                 self.get_error_in_chunk_count(
@@ -116,3 +117,13 @@ class Receiver(SimulationAgent):
                 ):
                     self.chunks_without_fixed_error += 1
             return self.chunks_without_fixed_error
+
+    def get_all_error_chunk_count(self, expected_chunks_list: list[list[int]]) -> int:
+        return self.chunks_with_error_detected + self.get_missed_error_chunk_count(
+            expected_chunks_list
+        )
+
+    def get_no_error_chunk_count(self, expected_chunks_list: list[list[int]]) -> int:
+        return self.chunks_without_error_detected - self.get_missed_error_chunk_count(
+            expected_chunks_list
+        )

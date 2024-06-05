@@ -9,12 +9,12 @@ class BinarySymmetricChannel(ChannelModel):
     def __init__(
         self,
         name: str,
-        noise_percentage: int,
+        error_percentage: int,
         verbose: Optional[bool] = False,
         seed: Optional[int] = int(time.time()),
     ):
         super().__init__(name, seed)
-        self.noise_percentage = noise_percentage
+        self.noise_percentage = error_percentage
         self.verbose = verbose
         self.bits_flipped = 0
         self.bits_not_flipped = 0
@@ -33,8 +33,8 @@ class BinarySymmetricChannel(ChannelModel):
                 self.bits_not_flipped += 1
         if self.verbose:
             self.print_verbose()
-        print(f"Message:\t\t {message}")
-        print(f"Noisy message:\t {noisy_message}")
+            print(f"Message:\t\t {message}")
+            print(f"Noisy message:\t {noisy_message}")
         return noisy_message
 
     def print_verbose(self):
