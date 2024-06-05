@@ -1,6 +1,7 @@
 import time
 
 import channels
+
 from utils.rng import LinearCongruentialGenerator
 from channels import ChannelModel
 from channels.bsc import BinarySymmetricChannel
@@ -10,13 +11,22 @@ from agents.receiver import Receiver
 from codes.hamming import HammingCoderDecoder
 from codes.triple import TripleCoderDecoder
 from codes import CoderDecoder
+from utils import csvSaver
+from datetime import datetime
 
 
 def simulation() -> None:
-    run_test()
+    now = datetime.now()
+    now_string = now.strftime("%H_%M_%S_%d_%m_%Y")
+    run_test(
+        test_name=str("ch_gem_1_10_ham_7_4_" + now_string + "_test.csv"),
+        channel=GilbertElliotModel("GEM", 1, 10),
+        coder_decoder=HammingCoderDecoder(7, 4),
+    )
 
 
 def run_test(
+    test_name: str,
     channel: ChannelModel,
     coder_decoder: CoderDecoder,
     parity_bits: int = 3,
@@ -30,8 +40,18 @@ def run_test(
     rng_seed: int = int(time.time()),
 ) -> None:
     new_rng = LinearCongruentialGenerator(seed=rng_seed)
-    message = list(new_rng.generate_bits(message_length))
-    results = []
+    results = [
+        [
+            "lp.",
+            "chunks",
+            "no_errors",
+            "errors",
+            "detected",
+            "fixed",
+            "unfixed",
+            "missed",
+        ]
+    ]
     total_bits = 2**parity_bits - 1
     data_bits = total_bits - parity_bits
     channel.verbose = verbose
@@ -39,6 +59,7 @@ def run_test(
     if isinstance(channel, channels.gem.GilbertElliotModel):
         channel.error_repetition_percentage = error_repetition_percentage
     for i in range(min_error_percentage, max_error_percentage, error_percentage_step):
+        message = list(new_rng.generate_bits(message_length))
         channel.error_percentage = i
         receiver = Receiver(
             name=str("Receiver" + str(i)),
@@ -88,6 +109,7 @@ def run_test(
                 number_of_chunks_with_missed_errors,  # number_of_chunks_with_missed_errors
             ]
         )
+    csvSaver.save_to_csv(results, test_name)
 
 
 if __name__ == "__main__":
