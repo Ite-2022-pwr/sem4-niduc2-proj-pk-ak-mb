@@ -52,8 +52,10 @@ def basic_tests(now_string: str = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")) 
         test_name=test_name,
         channel=GilbertElliotModel("GEM", 4, 13),
         coder_decoder=HammingCoderDecoder(7, 4),
-        message_length=40000,
+        message_length=4000,
         chunk_size=4,
+        parity_bits=3,
+        repetitions=20,
     )
     csvSaver.save_to_csv(results, test_name)
     test_name = str(
@@ -63,8 +65,9 @@ def basic_tests(now_string: str = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")) 
         test_name=test_name,
         channel=GilbertElliotModel("GEM", 4, 13),
         coder_decoder=TripleCoderDecoder(),
-        message_length=30000,
+        message_length=3000,
         chunk_size=3,
+        repetitions=20,
     )
     csvSaver.save_to_csv(results, test_name)
     test_name = str("ch_bsc_4err_cd_ham_7total_4data_" + now_string + "_test")
@@ -72,8 +75,10 @@ def basic_tests(now_string: str = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")) 
         test_name=test_name,
         channel=BinarySymmetricChannel("BSC", 4),
         coder_decoder=HammingCoderDecoder(7, 4),
-        message_length=40000,
+        message_length=4000,
         chunk_size=4,
+        parity_bits=3,
+        repetitions=20,
     )
     csvSaver.save_to_csv(results, test_name)
     test_name = str("ch_bsc_4err_cd_triple_3data_total_" + now_string + "_test")
@@ -81,8 +86,9 @@ def basic_tests(now_string: str = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")) 
         test_name=test_name,
         channel=BinarySymmetricChannel("BSC", 4),
         coder_decoder=TripleCoderDecoder(),
-        message_length=30000,
+        message_length=3000,
         chunk_size=3,
+        repetitions=20,
     )
     print("Finished basic tests")
     csvSaver.save_to_csv(results, test_name)
@@ -103,7 +109,7 @@ def hamming_tests(
         parity_bits = i
         total_bits = 2**parity_bits - 1
         data_bits = total_bits - parity_bits
-        message_length = 10000 * data_bits
+        message_length = 1000 * data_bits
         results = run_test(
             test_name=str(
                 "ch_gem_4err_10err_rep_cd_ham_"
@@ -120,6 +126,9 @@ def hamming_tests(
             coder_decoder=HammingCoderDecoder(total_bits, data_bits),
             message_length=message_length,
             chunk_size=data_bits,
+            results_to_append=results,
+            parity_bits=parity_bits,
+            repetitions=10,
         )
     print("Finished Hamming tests")
     csvSaver.save_to_csv(results, test_full_name)
@@ -139,7 +148,7 @@ def variable_error_percentage_tests_bsc(
         + "_test"
     )
     results = []
-    for i in range(0, 41, 2):
+    for i in range(0, 41, 1):
         results = run_test(
             test_name=str(
                 "ch_bsc_"
@@ -153,11 +162,13 @@ def variable_error_percentage_tests_bsc(
                 + "_test"
             ),
             channel=BinarySymmetricChannel("BSC", i),
+            error_percentage=i,
             coder_decoder=HammingCoderDecoder(total_bits, data_bits),
-            message_length=10000 * data_bits,
+            message_length=1000 * data_bits,
             chunk_size=data_bits,
             parity_bits=parity_bits,
-            repetitions=20,
+            results_to_append=results,
+            repetitions=10,
         )
     print("Finished running variable error_percentage in bsc test")
     csvSaver.save_to_csv(results, test_full_name)
@@ -181,7 +192,7 @@ def variable_error_percentage_tests_gem(
         + now_string
         + "_test"
     )
-    for i in range(0, 41, 2):
+    for i in range(0, 41, 1):
         print(
             f"\tRunning variable error_repetition_rate in gem test for {i} error rate"
         )
@@ -193,7 +204,7 @@ def variable_error_percentage_tests_gem(
             + "_test"
         )
         results = []
-        for j in range(0, 41, 2):
+        for j in range(0, 41, 1):
             results = run_test(
                 test_name=str(
                     "ch_gem_"
@@ -209,8 +220,10 @@ def variable_error_percentage_tests_gem(
                     + "_test.csv"
                 ),
                 channel=GilbertElliotModel("GEM", i, j),
+                error_percentage=i,
+                error_repetition_percentage=j,
                 coder_decoder=HammingCoderDecoder(total_bits, data_bits),
-                message_length=10000 * data_bits,
+                message_length=1000 * data_bits,
                 chunk_size=data_bits,
                 results_to_append=results,
                 repetitions=10,
@@ -218,6 +231,8 @@ def variable_error_percentage_tests_gem(
         print(
             f"\tFinished running variable error_repetition_rate in gem test for {i} error rate"
         )
+        if len(merged_results) == 0:
+            merged_results.append(results[0])
         merged_results.append(results[1:])
         csvSaver.save_to_csv(results, test_full_name)
     csvSaver.save_to_csv(merged_results, merged_tests_full_name)
