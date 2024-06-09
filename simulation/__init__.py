@@ -233,7 +233,9 @@ def variable_error_percentage_tests_gem(
         )
         if len(merged_results) == 0:
             merged_results.append(results[0])
-        merged_results.append(results[1:])
+
+        for row in results[1:]:
+            merged_results.append(row)
         csvSaver.save_to_csv(results, test_full_name)
     csvSaver.save_to_csv(merged_results, merged_tests_full_name)
     print(
