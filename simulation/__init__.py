@@ -1,20 +1,19 @@
 import os
 import time
+from datetime import datetime
+from pathlib import Path
 
 import channels
-
-from utils.rng import LinearCongruentialGenerator
+from agents.receiver import Receiver
+from agents.sender import Sender
 from channels import ChannelModel
 from channels.bsc import BinarySymmetricChannel
 from channels.gem import GilbertElliotModel
-from agents.sender import Sender
-from agents.receiver import Receiver
+from codes import CoderDecoder
 from codes.hamming import HammingCoderDecoder
 from codes.triple import TripleCoderDecoder
-from codes import CoderDecoder
-from utils import csvSaver
-from datetime import datetime
-from pathlib import Path
+from utils.rng import LinearCongruentialGenerator
+from utils.csv_saver import save_to_csv
 
 
 def simulation() -> None:
@@ -55,7 +54,7 @@ def basic_tests(now_string: str = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")) 
         message_length=40000,
         chunk_size=4,
     )
-    csvSaver.save_to_csv(results, test_name)
+    save_to_csv(results, test_name)
     test_name = str(
         "ch_gem_4err_13err_rep_cd_triple_3data_9total_" + now_string + "_test"
     )
@@ -66,7 +65,7 @@ def basic_tests(now_string: str = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")) 
         message_length=30000,
         chunk_size=3,
     )
-    csvSaver.save_to_csv(results, test_name)
+    save_to_csv(results, test_name)
     test_name = str("ch_bsc_4err_cd_ham_7total_4data_" + now_string + "_test")
     results = run_test(
         test_name=test_name,
@@ -75,7 +74,7 @@ def basic_tests(now_string: str = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")) 
         message_length=40000,
         chunk_size=4,
     )
-    csvSaver.save_to_csv(results, test_name)
+    save_to_csv(results, test_name)
     test_name = str("ch_bsc_4err_cd_triple_3data_total_" + now_string + "_test")
     results = run_test(
         test_name=test_name,
@@ -85,7 +84,7 @@ def basic_tests(now_string: str = datetime.now().strftime("%H_%M_%S_%d_%m_%Y")) 
         chunk_size=3,
     )
     print("Finished basic tests")
-    csvSaver.save_to_csv(results, test_name)
+    save_to_csv(results, test_name)
 
 
 def hamming_tests(
@@ -122,7 +121,7 @@ def hamming_tests(
             chunk_size=data_bits,
         )
     print("Finished Hamming tests")
-    csvSaver.save_to_csv(results, test_full_name)
+    save_to_csv(results, test_full_name)
 
 
 def variable_error_percentage_tests_bsc(
@@ -160,7 +159,7 @@ def variable_error_percentage_tests_bsc(
             repetitions=20,
         )
     print("Finished running variable error_percentage in bsc test")
-    csvSaver.save_to_csv(results, test_full_name)
+    save_to_csv(results, test_full_name)
 
 
 def variable_error_percentage_tests_gem(
@@ -219,8 +218,8 @@ def variable_error_percentage_tests_gem(
             f"\tFinished running variable error_repetition_rate in gem test for {i} error rate"
         )
         merged_results.append(results[1:])
-        csvSaver.save_to_csv(results, test_full_name)
-    csvSaver.save_to_csv(merged_results, merged_tests_full_name)
+        save_to_csv(results, test_full_name)
+    save_to_csv(merged_results, merged_tests_full_name)
     print(
         "Finished running variable error_percentage and error_repetition_percentage in gem test"
     )
@@ -331,7 +330,7 @@ def run_test(
                 encoded_chunk_bits,  # encoded_chunk_bits, in triple always 3*chunk_size
             ]
         )
-        print(f"Repetition {i}/{repetitions} done")
+        print(f"Repetition {i+1}/{repetitions} done")
     print(f"Test: {test_name} finished")
     return results_to_append
 
