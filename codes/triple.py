@@ -1,5 +1,6 @@
 import sys
 import os
+from typing import Tuple, List
 
 from numpy import array
 from collections import Counter
@@ -21,12 +22,15 @@ class TripleCoderDecoder(CoderDecoder):
             encoded.extend([bit] * 3)
         return encoded
 
-    def decode(self, coded: list[int]) -> list[int]:
+    def decode(self, coded: list[int]) -> tuple[list[int], int]:
         decoded = []
+        error_count = 0
         for i in range(0, len(coded), 3):
             chunk = coded[i : i + 3]
             decoded.append(max(set(chunk), key=chunk.count))
-        return decoded
+            if chunk[0] != chunk[1] or chunk[0] != chunk[2] or chunk[1] != chunk[2]:
+                error_count += 1
+        return decoded, error_count
 
     def __str__(self) -> str:
         return "TripleCoderDecoder"
