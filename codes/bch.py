@@ -1,287 +1,120 @@
-import sys
-import os
-import galois
-from galois import Poly, GF
-from sympy.abc import x, alpha
-from sympy import Matrix
 import numpy as np
-from sympy import Symbol, Poly
-from sympy import GF, Poly, Pow, Add, Symbol
-from sympy.polys.galoistools import gf_add, gf_mul
+from gf import GaloisField, GF2Polynomial, Gf2mPoly
 
-__SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(__SCRIPT_DIR))
 
-from functools import reduce
-from codes import CoderDecoder
+def _generator_poly(field: GaloisField, num_roots: int) -> GF2Polynomial:
+    seen_conjugates = set()
+    generator_polynomial = GF2Polynomial([1])
 
-class BCHCoderDecoder(CoderDecoder):
-    def __init__(self, total_bits: int = 15, data_bits: int = 5, target_error: int = 1) -> None:
-        #super().__init__(name = "bch")
-        super().__init__()
-        self.q: int = 2
-        self.n: int = total_bits                          # Length of the code
-        self.d: int = total_bits - data_bits              # Minimum number of errors
-        self.t = target_error                             # Target error correction capability in bits
-        #self.d: int = target_error * 2 + 1                # min Hamming distance d ≤ q^m − 1
-        self.d: int = 7
-        self.t: int = (self.d - 1) // 2
-        self.k: int = 0
-        self.generated_poly = None  # Placeholder for r_poly
-        self.min_poly = None
+    for root_index in range(num_roots):
+        power = 2 * root_index + 1
+        if power in seen_conjugates:
+            continue
+        seen_conjugates.update(field.conjugates(power))
+        root = field.get_element(power)
+        minimal_poly = field.min_polynomial(root)
+        generator_polynomial *= minimal_poly
+    return generator_polynomial
 
-        #self.m: int = self.find_m()
-        self.m: int =  4
-
-    def find_m(self):
-        m = 2
-        while(True):
-            result = self.q ** m - 1                                   # Iteruj przez potencjalne wartości m 
-            if (result) >= self.n:       # Sprawdź, czy n = q^m - 1 spełnione 
-                return m  
-            m += 1
-
-    def min_polynomial(self, GF):
-        minimal_polynomials = []
-        for i in range(1, self.n + 1):
-            min_pol = GF.minimal_poly(GF.primitive_element ** i)
-            minimal_polynomials.append(min_pol)
-        return minimal_polynomials
-
-    def generator_poly(self, minimal_polynomials):
-        g = 1
-        processed_polynomials = []
-
-        if self.d % 2 == 1:
-            self.d -= 1
-
-        for i in range(0, self.d):
-            minimal = minimal_polynomials[i]
-            if minimal in processed_polynomials:
-                continue
-            g *= minimal
-            processed_polynomials.append(minimal)
-        return g
-
-    def encoding(self, message):
-        GF = galois.GF(self.q ** self.m)
-        self.min_poly = self.min_polynomial(GF)
-        self.generated_poly = self.generator_poly(self.min_poly)
-        generated_coeffs = self.generated_poly.coefficients()
-        print(generated_coeffs)
-
-        #generated_GF = GF(generated_coeffs)
-        generated_GF = GF([1,0,1,0,0,1,1,0,1,1,1])
-        generated_poly = galois.Poly(generated_GF, order="desc")
-        self.k = self.n - generated_poly.degree
-        print(generated_poly)
-
-        message_GF = GF(message)
-        message_poly = galois.Poly(message_GF, order="desc")
-        print(message_poly)
-
-        #print(type(generated_poly))
-        #print(type(message_polly))
-
-        codded_poly = generated_poly * message_poly
-        codded_poly_coeffs = codded_poly.coefficients()
-        #print(codded_poly)
-        print(codded_poly_coeffs)
-        return codded_poly_coeffs
-
-    def splitting_message(self, message):
-        text = []
-        while message > 0:
-            text.append(message % 10)
-            message = message // 10
-        text.reverse()
-        return text
-    
-    def eval(self, received_array, alpha_power):
-        GF = galois.GF(self.q ** self.m)
-        tab = []
-        tab.append(0)
-        tab_gf = GF(tab)
-        evaluation = galois.Poly(tab_gf, order="desc")
-        for i, coefficient in enumerate(reversed(received_array)):
-            tab = []
-            tab.append(coefficient)
-            tab_gf = GF(tab)
-            coefficient = galois.Poly(tab_gf, order="desc")
-            alfik = alpha_power ** i
-            evaluation += coefficient * (alpha_power ** i)
-        return evaluation
-
-    def syndromes(self, received_vector):
-        syndrome = []
-        GF = galois.GF(self.q ** self.m)
-        alpha = GF.primitive_element
-        print(alpha)
-        received_array = np.array(received_vector, dtype=object)  # Convert to Galois Field array
-
-        for i in range(1, 2 * self.t + 1):
-            alpha_i = alpha ** i
-            print(alpha_i)
-            alpha_i_poly = galois.Poly(alpha_i, order="desc")
-            print(alpha_i_poly)
-            syn = self.eval(received_array, alpha_i_poly)
-            syndrome.append(syn)
-            print(syn)
-        #syndrome = self.reverse(syndrome)
-        return syndrome        
-
-    def reverse(self, array):
-        reversed = []
-        for i in range (len(array) - 1, -1, -1):
-            reversed.append(array[i])
-        return reversed
-
-    def decoding(self, message):
-        syndromes = BCH.syndromes(message)
-        GF = galois.GF(self.q ** self.m)
-        zero_gf = GF([0])
-        zero_poly = galois.Poly(zero_gf, order="desc")
-        error = self.calculate_error(syndromes)
-
-        if error == zero_poly:
-            n = self.n - len(message)
-            print(n)
-            return np.pad(np.array(message), (n, 0), 'constant')[:self.k]
-
-        v = self.t
-        S_matrix = self.generate_matrix_S(syndromes, v)
-        S_numerix = self.convert_matrix_to_numerix(S_matrix)
-        print(S_numerix)
-        S_det = self.calculate_determinant(S_numerix)
-        print(S_det)
-
-        while S_det.is_zero and S_matrix.shape[0] > 1:
-            v -= 1
-            S_matrix = self.generate_matrix_S(syndromes, v)
-            S_numerix = self.convert_matrix_to_numerix(S_matrix)
-            S_det = self.calculate_determinant(S_numerix)
-
-        C_matrix = self.generate_matrix_C(syndromes)
-        lambda_matrix = self.generate_matrix_lambda()
+class Bch:
+    def __init__(self, finite_field: GaloisField, error_correction_capability: int) -> None:
+        self.finite_field = finite_field  # GF(2^m)
+        self.error_correction_capability = error_correction_capability  # error correction capability
+        self.codeword_length = 2**finite_field.m - 1  # codeword length
+        self.generator_polynomial = generator_polynomial = _generator_poly(finite_field, error_correction_capability)  # generator polynomial
+        self.minimum_distance = generator_polynomial.hamming_weight()  # see Theorem 3.1
+        self.dataword_length = self.codeword_length - generator_polynomial.degree  # dataword length
+        self.num_parity_digits = self.codeword_length - self.dataword_length  # number of parity-check digits
         
+        self.minimum_polynomials = []
+        for i in range(1, 2 * error_correction_capability + 1):
+            alpha_i = finite_field.get_element(i)  # element alpha^i
+            self.minimum_polynomials.append(finite_field.min_polynomial(alpha_i))
+
+    def encode(self, dataword: list) -> list:
+        assert len(dataword) == self.dataword_length
+        padded_message = GF2Polynomial([0] * self.num_parity_digits + dataword)  # x^(n-k)*d(x)
+        parity_check = padded_message % self.generator_polynomial  # rho(x)
         
+        num_zero_padding = self.num_parity_digits - parity_check.degree - 1
+        return dataword + parity_check.coefs + [0] * num_zero_padding
+
+    def syndrome(self, received_codeword: list) -> np.array:
+        assert len(received_codeword) == self.codeword_length, "Invalid codeword length"
+        received_polynomial = GF2Polynomial(received_codeword)
+        syndromes = np.zeros(2 * self.error_correction_capability, dtype=self.finite_field.dtype)
         
-        #augmented_matrix = np.hstack((S_matrix, C_matrix))
-        #print(augmented_matrix)
-        #reduced_matrix = self.row_reduction(augmented_matrix)
-        #return reduced_matrix
+        for i in range(1, 2 * self.error_correction_capability + 1):
+            remainder_poly = received_polynomial % self.minimum_polynomials[i - 1]  # a polynomial over GF(2)
+            remainder_gf2m_poly = Gf2mPoly(self.finite_field, remainder_poly)  # cast to a GF(2^m) polynomial
+            alpha_i = self.finite_field.get_element(i)  # element alpha^i
+            syndromes[i - 1] = remainder_gf2m_poly.eval(alpha_i)  # b_i(alpha^i)
+        
+        return syndromes
 
-        #while v > 0:
-        #    detS = self.calculate_determinant(S_matrix)
-        #    print(detS)
-        #    if detS == 0:
-        #        break
-        #    v -= 1
-        #    S_matrix = self.generate_matrix_S(syndromes, v)
-        #    print(S_matrix)
-        #self.calculate_lambda_matrix(S_matrix, C_matrix, lambda_matrix)
+    def err_loc_polynomial(self, syndromes: np.array) -> Gf2mPoly:
+        num_rows = self.error_correction_capability + 2
 
-    def generate_matrix_S(self, syndromes, size):
-        matrix = np.zeros((size, size), dtype=object)  # Użyj dtype=object, aby przechowywać dowolne obiekty, w tym wielomiany
-        for i in range(size):
-            for j in range(size):
-                matrix[i][j] = syndromes[(i+j)]
-        return matrix
-    
-    def convert_matrix_to_numerix(self, matrix):
-        rows, cols = matrix.shape
-        numerix = np.zeros((rows, cols), dtype=float)
+        mu_values = np.zeros(num_rows)
+        mu_values[0] = -0.5
+        mu_values[1:] = np.arange(0, self.error_correction_capability + 1)
 
-        for i in range(rows):
-            for j in range(cols):
-                numerix[i][j] = matrix[i, j].coeffs
-        return numerix
+        error_locator_polynomials = [
+            Gf2mPoly(self.finite_field, [self.finite_field.unit]),
+            Gf2mPoly(self.finite_field, [self.finite_field.unit]),
+            Gf2mPoly(self.finite_field, [self.finite_field.unit, syndromes[0]])
+        ]
 
-    def zero_matrix(self, x, y):
-        GF = galois.GF(self.q ** self.m)
-        zero_gf = GF([0])
-        zero_poly = galois.Poly(zero_gf, order="desc")
+        discrepancies = np.zeros(num_rows, dtype=self.finite_field.dtype)
+        discrepancies[0] = self.finite_field.unit
+        discrepancies[1] = syndromes[0]
 
-        matrix = np.full((x, y), zero_poly, dtype=object)  # Wypełnij macierz zerowymi wielomianami
-        return matrix
+        row = 2
+        while row <= self.error_correction_capability:
+            mu = mu_values[row]
+            two_mu = int(2 * mu)
 
-    def generate_matrix_C(self, syndromes):
-        matrix = np.zeros((self.t, 1), dtype=object)  # Użyj dtype=object, aby przechowywać dowolne obiekty, w tym wielomiany
-        for i in range(self.t):
-            for j in range(1):
-                matrix[i][j] = syndromes[self.t + i + j]
-        return matrix
-    
-    def generate_matrix_lambda(self):
-        lambda_matrix = np.zeros((self.t, 1))
-        GF = galois.GF(self.q ** self.m)
-        zero_gf = GF([0])
-        zero_poly = galois.Poly(zero_gf, order="desc")
+            discrepancies[row] = syndromes[two_mu]  # e.g., for mu=1, pick S[2]
+            for j, coef in enumerate(error_locator_polynomials[row].coefficients[1:]):
+                if coef:
+                    discrepancies[row] ^= self.finite_field.multiply(coef, syndromes[two_mu - j - 1])
 
-        for i in range(self.t):
-            row = []
-            for j in range(1):
-                lambda_matrix[i][j] = zero_poly
-        return lambda_matrix
-    
-    def calculate_determinant(self, matrix):
-        determinant = np.linalg.det(matrix)
-        GF = galois.GF(self.q ** self.m)
-        det_gf = GF(int(determinant))
-        det_poly = galois.Poly(det_gf, order="desc")
-        return det_poly
-    
-    def calculate_error(self, syndromes):
-        GF = galois.GF(self.q ** self.m)
-        zero_gf = GF([0])
-        error = galois.Poly(zero_gf, order="desc")
-        for one_syn in syndromes:
-            error += one_syn
-        return error
+            if discrepancies[row] == 0:
+                error_locator_polynomials.append(error_locator_polynomials[row])
+            else:
+                row_rho = 0  # row number where mu=rho
+                max_diff = -2  # maximum diff "2*rho - sigma[row_rho].degree"
+                for j in range(row - 1, -1, -1):  # rows prior to the μ-th row
+                    if discrepancies[j] != 0:  # discrepancy is not zero
+                        diff = (2 * mu_values[j]) - error_locator_polynomials[j].degree
+                        if diff > max_diff:
+                            max_diff = diff
+                            row_rho = j
+                rho = mu_values[row_rho]  # value of mu at the rho-th row
 
-    def calculate_lambda_matrix(self, S_matrix, C_matrix, lambda_matrix):
-        inversed_S_matrix = np.linalg.inv(S_matrix)
-        lambda_matrix = - np.dot(inversed_S_matrix, C_matrix)
-        print(lambda_matrix)
-    
-    #def check_if_empty(self, matrix):
-    #    lambda_matrix = np.zeros((self.t, 1))
-    #    GF = galois.GF(self.q ** self.m)
-    #    zero_gf = GF([0])
-    #    zero_poly = galois.Poly(zero_gf, order="desc")
-    #
-    #    rows = len(matrix)
-    #    columns = len(matrix[0])
-    #
-    #    for i in range(rows):
-    #        for j in range(columns):
-    #            element_poly = galois.Poly(GF([matrix[i][j]]), order="desc")
-    #            if element_poly.equal(zero_poly):
-    #                return True
-    #    return False
+                discrepancy_ratio = self.finite_field.divide(discrepancies[row], discrepancies[row_rho])
+                x_shifted = Gf2mPoly(self.finite_field, int(2 * (mu - rho)) * [0] + [self.finite_field.unit])
+                new_polynomial = error_locator_polynomials[row] + (x_shifted * discrepancy_ratio * error_locator_polynomials[row_rho])
+                error_locator_polynomials.append(new_polynomial)
 
-# Instantiate the BCHCoderDecoder class
-BCH = BCHCoderDecoder()
-print(BCH.n)
-print(BCH.m)
-message = 11011
-message = BCH.splitting_message(message)
-message2 = 100111000110100
-message2 = BCH.splitting_message(message2)
-#synd = BCH.syndromes([1,0,0,1,1,1,0,0,0,1,1,0,1,0,0])
-#encoded_message = BCH.encoding(message2)
-#synd = BCH.syndromes([1,0,0,1,1,1,0,0,0,1,1,0,1,0,0])
-print(BCH.decoding(message2))
-#GF = galois.GF(BCH.q ** BCH.m)
-#matrix = [
-#    [galois.Poly(GF(2), order="desc"), galois.Poly(GF(3), order="desc"), galois.Poly(GF(1), order="desc"), galois.Poly(GF(1), order="desc")],
-#    [galois.Poly(GF(4), order="desc"), galois.Poly(GF(1), order="desc"), galois.Poly(GF(2), order="desc"), galois.Poly(GF(2), order="desc")],
-#    [galois.Poly(GF(3), order="desc"), galois.Poly(GF(2), order="desc"), galois.Poly(GF(3), order="desc"), galois.Poly(GF(3), order="desc")]
-#]
-#element = galois.Poly(GF(2), order="desc")
-#print(element.coeffs)
-#print("\n")
-#print(BCH.row_reduction(matrix))
-#print(BCH.peterson(synd))
-#decoded_message = BCH.decoding(encoded_message[0], encoded_message[1])
-#print(decoded_message)
+            row += 1
+
+        return error_locator_polynomials[row]
+
+    def err_loc_numbers(self, error_locator_polynomial: Gf2mPoly) -> list:
+        error_positions = []
+        for elem in self.finite_field.table[1:]:
+            if error_locator_polynomial.eval(elem) == self.finite_field.zero:
+                error_positions.append(elem)
+        return [self.finite_field.inverse(x) for x in error_positions]
+
+    def decode(self, received_codeword: list) -> list:
+        syndromes = self.syndrome(received_codeword)
+        
+        if np.any(syndromes):
+            error_locator_polynomial = self.err_loc_polynomial(syndromes)
+            error_positions = self.err_loc_numbers(error_locator_polynomial)
+            error_exponents = [self.finite_field.get_exponent(x) for x in error_positions]
+            for exp in error_exponents:
+                received_codeword[exp] ^= 1
+        return received_codeword[:self.dataword_length]
