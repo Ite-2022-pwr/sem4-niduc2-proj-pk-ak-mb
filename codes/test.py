@@ -2,19 +2,28 @@ import random
 import numpy as np
 from bch import BchCoderDecoder as Bch
 from gf import GaloisField, GF2Polynomial, Gf2mPoly
+from utils.gf_poly_str_finder import find_irreducible_polynomial_str
 
 
 if __name__ == "__main__":
     # Inicjalizacja parametrów
     m = 6  # Stopień rozszerzenia ciała GF(2^m)
     t = 3  # Zdolność korekcji błędów
-    polynomial_str = "1100001"  # Reprezentacja wielomianu tworzącego ciała GF(2^m)
+    polynomial_str = find_irreducible_polynomial_str(
+        m
+    )  # Reprezentacja wielomianu tworzącego ciała GF(2^m)
 
     # Inicjalizacja ciała GF(2^m)
     finite_field = GaloisField(m, polynomial_str)
 
     # Inicjalizacja kodu BCH
-    bch_code = Bch(finite_field, t, "BCH(6, 15)")
+    bch_code = Bch(finite_field, t, "BCH(63, 45, 11)")
+    print(bch_code.dataword_length)
+    print(bch_code.codeword_length)
+    print(bch_code.minimum_distance)
+    print(polynomial_str)
+    print(bch_code.finite_field.min_polynomial(3).coefs)
+    print(bch_code.generator_polynomial.coefs)
 
     # Generowanie losowej wiadomości do zakodowania
     message = list(np.random.randint(2, size=bch_code.dataword_length))
@@ -26,7 +35,7 @@ if __name__ == "__main__":
             word[location] ^= 1
 
     # Testowanie kodu BCH dla różnych liczby błędów
-    for num_errors in range(t * 2):
+    for num_errors in range(t):
         print("Original message:  ", message)
         # Kodowanie wiadomości
         codeword = bch_code.encode(message)
