@@ -173,6 +173,7 @@ def variable_error_percentage_tests_gem(
     total_bits = 2**parity_bits - 1
     data_bits = total_bits - parity_bits
     merged_results = []
+    merged_lines_number = 0
     merged_tests_full_name = (
         "ch_gem_0err_min_40err_max_2err_step_"
         + "0err_rep_min_40err_rep_max_2err_rep_step_"
@@ -217,7 +218,12 @@ def variable_error_percentage_tests_gem(
         print(
             f"\tFinished running variable error_repetition_rate in gem test for {i} error rate"
         )
-        merged_results.append(results[1:])
+        if len(merged_results) == 0:
+            merged_results.append(results[0])
+        for row in results[1:]:
+            row[0] = merged_lines_number
+            merged_lines_number += 1
+            merged_results.append(row)
         save_to_csv(results, test_full_name)
     save_to_csv(merged_results, merged_tests_full_name)
     print(
