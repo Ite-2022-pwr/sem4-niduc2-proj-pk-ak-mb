@@ -10,10 +10,13 @@ from channels import ChannelModel
 from channels.bsc import BinarySymmetricChannel
 from channels.gem import GilbertElliotModel
 from codes import CoderDecoder
+from codes.gf import GaloisField
 from codes.hamming import HammingCoderDecoder
 from codes.triple import TripleCoderDecoder
+from codes.bch import BchCoderDecoder
 from utils.rng import LinearCongruentialGenerator
 from utils.csv_saver import save_to_csv
+from utils.gf_poly_str_finder import find_irreducible_polynomial_str
 
 
 def simulation() -> None:
@@ -122,6 +125,21 @@ def hamming_tests(
         )
     print("Finished Hamming tests")
     save_to_csv(results, test_full_name)
+
+
+def bch_tests():
+    # Inicjalizacja parametrów
+    m = 6  # Stopień rozszerzenia ciała GF(2^m)
+    t = 3  # Zdolność korekcji błędów
+    polynomial_str = find_irreducible_polynomial_str(
+        m
+    )  # Reprezentacja wielomianu tworzącego ciała GF(2^m)
+
+    # Inicjalizacja ciała GF(2^m)
+    finite_field = GaloisField(m, polynomial_str)
+
+    # Inicjalizacja kodu BCH
+    bch_code = BchCoderDecoder(finite_field, t, "BCH(63, 15)")
 
 
 def variable_error_percentage_tests_bsc(

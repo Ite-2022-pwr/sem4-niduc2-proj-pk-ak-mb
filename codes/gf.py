@@ -2,22 +2,28 @@ import random
 import numpy as np
 from typing import Union
 
+
 # Funkcje pomocnicze
 def bit_string_to_array(bit_string):
     return np.array(list(map(int, bit_string)), dtype=np.uint8)
 
+
 def generate_galois_field_matrix(m, polynomial_string):
     polynomial = bit_string_to_array(polynomial_string)
-    assert (len(polynomial) == m + 1 and polynomial[-1] == 1), \
-        "The primitive polynomial must have degree m"
+    assert (
+        len(polynomial) == m + 1 and polynomial[-1] == 1
+    ), "The primitive polynomial must have degree m"
     feedback_weights = np.copy(polynomial[:-1])
     feedback_weights[0] = 0
     gf_matrix = np.zeros((2**m, m), dtype=np.uint8)
     gf_matrix[1, 0] = 1
     for i in range(1, 2**m - 1):
         last_bit = gf_matrix[i, -1]
-        gf_matrix[i + 1, :] = np.logical_xor(np.roll(gf_matrix[i, :], 1), last_bit * feedback_weights)
+        gf_matrix[i + 1, :] = np.logical_xor(
+            np.roll(gf_matrix[i, :], 1), last_bit * feedback_weights
+        )
     return gf_matrix
+
 
 # Klasa GF
 class GaloisField:
@@ -47,8 +53,7 @@ class GaloisField:
         return gf_table
 
     def _generate_inverse_table(self, gf_table):
-        assert gf_table[0] == 0, \
-            "The GF table must have the zero element at index 0"
+        assert gf_table[0] == 0, "The GF table must have the zero element at index 0"
         inverse_table = np.zeros(gf_table.shape, dtype=gf_table.dtype)
         for alpha_i in range(len(gf_table)):
             inverse_table[alpha_i] = np.argwhere(gf_table == alpha_i)[0][0]
@@ -79,8 +84,9 @@ class GaloisField:
         return self.multiply(a, self.inverse(b))
 
     def conjugates(self, i):
-        assert i <= (self.two_to_m_minus_one - 1), \
-            "The max element in GF(2^m) is alpha^(2^m-2)"
+        assert i <= (
+            self.two_to_m_minus_one - 1
+        ), "The max element in GF(2^m) is alpha^(2^m-2)"
         conjugate_list = [i]
         max_distinct_conjugates = self.m
         for j in range(1, max_distinct_conjugates + 1):
@@ -101,19 +107,32 @@ class GaloisField:
             product *= a
         return GF2Polynomial([self.index(x) for x in product.coefficients])
 
+
 # Klasy Gf2Poly i Gf2mPoly
 def is_gf2_polynomial(coefficients: list) -> bool:
     return set(coefficients).issubset({0, 1})
 
+
 def is_gf2m_polynomial(gf: GaloisField, coefficients: list) -> bool:
     return all([coef in gf.table for coef in coefficients])
 
+
 def cut_trailing_gf2_polynomial_zeros(coefficients: list) -> list:
-    return coefficients[:(len(coefficients) - coefficients[::-1].index(1))] if any(coefficients) else []
+    return (
+        coefficients[: (len(coefficients) - coefficients[::-1].index(1))]
+        if any(coefficients)
+        else []
+    )
+
 
 def cut_trailing_gf2m_polynomial_zeros(coefficients: list) -> list:
     trailing_zeros = next((i for i, x in enumerate(reversed(coefficients)) if x), None)
-    return coefficients[:(len(coefficients) - trailing_zeros)] if trailing_zeros is not None else []
+    return (
+        coefficients[: (len(coefficients) - trailing_zeros)]
+        if trailing_zeros is not None
+        else []
+    )
+
 
 def add_gf2_polynomial(a: list, b: list) -> list:
     n_pad = len(a) - len(b)
@@ -123,6 +142,7 @@ def add_gf2_polynomial(a: list, b: list) -> list:
         a = a + (-n_pad * [0])
     return [x ^ y for x, y in zip(a, b)]
 
+
 def add_gf2m_polynomial(gf: GaloisField, a: list, b: list) -> list:
     n_pad = len(a) - len(b)
     if n_pad > 0:
@@ -131,6 +151,7 @@ def add_gf2m_polynomial(gf: GaloisField, a: list, b: list) -> list:
         a = a + (-n_pad * [0])
     return [x ^ y for x, y in zip(a, b)]
 
+
 def multiply_gf2_polynomial(a: list, b: list) -> list:
     product = (len(a) + len(b) - 1) * [0]
     for i, a_i in enumerate(a):
@@ -138,12 +159,14 @@ def multiply_gf2_polynomial(a: list, b: list) -> list:
             product[i + j] ^= a_i & b_j
     return product
 
+
 def multiply_gf2m_polynomial(gf, a, b):
     product = (len(a) + len(b) - 1) * [0]
     for i, a_i in enumerate(a):
         for j, b_j in enumerate(b):
             product[i + j] ^= gf.multiply(a_i, b_j)
     return product
+
 
 def remainder_gf2_polynomial(a: list, b: list, deg_a: int, deg_b: int) -> list:
     if not any(a):
@@ -156,8 +179,11 @@ def remainder_gf2_polynomial(a: list, b: list, deg_a: int, deg_b: int) -> list:
     nxors = length_a - length_b + 1
     for i in np.arange(length_a, length_a - nxors, -1):
         if remainder[i - 1]:
-            remainder[(i - length_b):i] = np.bitwise_xor(remainder[(i - length_b):i], b)
+            remainder[(i - length_b) : i] = np.bitwise_xor(
+                remainder[(i - length_b) : i], b
+            )
     return remainder
+
 
 class GF2Polynomial:
     def __init__(self, coefficients: list) -> None:
@@ -179,16 +205,20 @@ class GF2Polynomial:
 
     def __mod__(self, other):
         return GF2Polynomial(
-            remainder_gf2_polynomial(self.coefs, other.coefs, self.degree, other.degree))
+            remainder_gf2_polynomial(self.coefs, other.coefs, self.degree, other.degree)
+        )
 
     def __eq__(self, other: object) -> bool:
         return self.coefs == other.coefs
 
     def hamming_weight(self):
         return sum(self.coefs)
-    
+
+
 class Gf2mPoly:
-    def __init__(self, field: GaloisField, coefficients: Union[list, GF2Polynomial]) -> None:
+    def __init__(
+        self, field: GaloisField, coefficients: Union[list, GF2Polynomial]
+    ) -> None:
         if isinstance(coefficients, GF2Polynomial):
             coefficients = [field.table[x] for x in coefficients.coefs]
 
@@ -201,17 +231,30 @@ class Gf2mPoly:
 
     def __add__(self, other):
         if isinstance(other, Gf2mPoly):
-            return Gf2mPoly(self.field, add_gf2m_polynomial(self.field, self.coefficients, other.coefficients))
+            return Gf2mPoly(
+                self.field,
+                add_gf2m_polynomial(self.field, self.coefficients, other.coefficients),
+            )
         else:
             raise ValueError("Addition is defined between two GF(2^m) polynomials")
 
     def __mul__(self, other):
         if isinstance(other, Gf2mPoly):
-            return Gf2mPoly(self.field, multiply_gf2m_polynomial(self.field, self.coefficients, other.coefficients))
+            return Gf2mPoly(
+                self.field,
+                multiply_gf2m_polynomial(
+                    self.field, self.coefficients, other.coefficients
+                ),
+            )
         elif other in self.field.table:
-            return Gf2mPoly(self.field, [self.field.multiply(other, coeff) for coeff in self.coefficients])
+            return Gf2mPoly(
+                self.field,
+                [self.field.multiply(other, coeff) for coeff in self.coefficients],
+            )
         else:
-            raise ValueError("Multiplication is defined between a GF(2^m) polynomial and another GF(2^m) polynomial or scalar")
+            raise ValueError(
+                "Multiplication is defined between a GF(2^m) polynomial and another GF(2^m) polynomial or scalar"
+            )
 
     def __eq__(self, other: object) -> bool:
         return self.coefficients == other.coefficients
