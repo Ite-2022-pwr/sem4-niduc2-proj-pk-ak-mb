@@ -37,11 +37,13 @@ class TripleCoderDecoder(CoderDecoder):
 
 
 if __name__ == "__main__":
-    message = [1, 0, 1, 0, 0, 1, 1, 1]
-    coder_decoder = TripleCoderDecoder()
-    encoded = coder_decoder.encode(message)
-    decoded = coder_decoder.decode(encoded)
-    print(f"Message: {message}")
-    print(f"Encoded: {encoded}")
-    print(f"Decoded: {decoded}")
-    print(f"Message == Decoded: {message == decoded}")
+    original_message = [1, 0, 1, 0, 0, 1, 1, 1]
+    coder_decoder_instance = TripleCoderDecoder()
+    encoded_message = coder_decoder_instance.encode(original_message)
+    decoded_message = coder_decoder_instance.decode(encoded_message)
+    
+    # Wypisywanie wyników
+    print(f"Oryginalna wiadomość: {original_message}")
+    print(f"Zakodowana wiadomość: {encoded_message}")
+    print(f"Zdekodowana wiadomość: {decoded_message}")
+    print(f"Czy oryginalna wiadomość jest równa zdekodowanej? {original_message == decoded_message}")
