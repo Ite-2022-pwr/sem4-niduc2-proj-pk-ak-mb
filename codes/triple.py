@@ -1,34 +1,36 @@
 import sys
 import os
+from typing import Tuple, List
 
 from numpy import array
 from collections import Counter
 
-# Pobieranie ścieżki do bieżącego katalogu skryptu
-current_script_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(current_script_dir))
+__SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(__SCRIPT_DIR))
 
-# Importowanie klasy CoderDecoder z modułu codes
 from functools import reduce
 from codes import CoderDecoder
 
 
 class TripleCoderDecoder(CoderDecoder):
     def __init__(self):
-        super().__init__(name="triple_encoder_decoder")
+        super().__init__(name="triple")
 
-    def encode(self, message_bits: list[int]) -> list[int]:
-        encoded_message = []
-        for bit in message_bits:
-            encoded_message.extend([bit] * 3)  # Podwaja każdy bit
-        return encoded_message
+    def encode(self, message: list[int]) -> list[int]:
+        encoded = []
+        for bit in message:
+            encoded.extend([bit] * 3)
+        return encoded
 
-    def decode(self, encoded_message_bits: list[int]) -> list[int]:
-        decoded_message = []
-        for i in range(0, len(encoded_message_bits), 3):
-            chunk = encoded_message_bits[i : i + 3]
-            decoded_message.append(max(set(chunk), key=chunk.count))  # Reguła większościowa
-        return decoded_message
+    def decode(self, coded: list[int]) -> tuple[list[int], int]:
+        decoded = []
+        error_count = 0
+        for i in range(0, len(coded), 3):
+            chunk = coded[i : i + 3]
+            decoded.append(max(set(chunk), key=chunk.count))
+            if chunk[0] != chunk[1] or chunk[0] != chunk[2] or chunk[1] != chunk[2]:
+                error_count += 1
+        return decoded, error_count
 
     def __str__(self) -> str:
         return "TripleCoderDecoder"

@@ -54,6 +54,9 @@ class Sender(SimulationAgent):
             encoded_chunk = self.coderDecoder.encode(chunk)
             self.receiver.receive_chunk_encoded(self.channel.transmit(encoded_chunk))
 
+    def set_channel(self, channel: ChannelModel):
+        self.channel = channel
+
 
 if __name__ == "__main__":
     from channels.gem import GilbertElliotModel
@@ -72,8 +75,8 @@ if __name__ == "__main__":
     hamming = HammingCoderDecoder(total_bits, data_bits)
     print(f"Hamming, total_bits: {total_bits}, data_bits: {data_bits}")
     receiver = Receiver("Receiver", data_bits, hamming)
-    gem = GilbertElliotModel("GEM", 1, 1, verbose=False)
-    bsc = BinarySymmetricChannel("BSC", 4, verbose=False)
+    gem = GilbertElliotModel("GEM", 1, 20, verbose=True)
+    bsc = BinarySymmetricChannel("BSC", 10, verbose=False)
     sender = Sender(
         "Sender",
         receiver,
@@ -103,3 +106,7 @@ if __name__ == "__main__":
     print(
         f"chunks_with_missed_error: {receiver.get_missed_error_chunk_count(sender.fragmented_message_chunks)}"
     )
+    print(
+        f"chunks_without_error: {receiver.get_no_error_chunk_count(sender.fragmented_message_chunks)}"
+    )
+    print(type(sender.channel))

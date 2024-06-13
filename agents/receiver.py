@@ -23,16 +23,16 @@ class Receiver(SimulationAgent):
         self.chunks_without_error_detected_position = []
 
     def prepare_to_receive(self) -> None:
-        self.message = []
-        self.fragmented_message_chunks = []
-        self.fragmented_message_chunks_encoded = []
+        self.message.clear()
+        self.fragmented_message_chunks.clear()
+        self.fragmented_message_chunks_encoded.clear()
         self.chunks_with_error_detected = 0
         self.chunks_without_error_detected = 0
         self.chunks_with_fixed_error = 0
         self.chunks_without_fixed_error = 0
         self.chunks_with_missed_error = 0
-        self.chunks_with_error_detected_position = []
-        self.chunks_without_error_detected_position = []
+        self.chunks_with_error_detected_position.clear()
+        self.chunks_without_error_detected_position.clear()
 
     def receive_whole(self, message: list[int]) -> None:
         self.message = message
@@ -80,6 +80,7 @@ class Receiver(SimulationAgent):
     def get_missed_error_chunk_count(
         self, expected_chunks_list: list[list[int]]
     ) -> int:
+        self.chunks_with_missed_error = 0
         for chunk_pos in self.chunks_without_error_detected_position:
             if (
                 self.get_error_in_chunk_count(
@@ -116,3 +117,13 @@ class Receiver(SimulationAgent):
                 ):
                     self.chunks_without_fixed_error += 1
             return self.chunks_without_fixed_error
+
+    def get_all_error_chunk_count(self, expected_chunks_list: list[list[int]]) -> int:
+        return self.chunks_with_error_detected + self.get_missed_error_chunk_count(
+            expected_chunks_list
+        )
+
+    def get_no_error_chunk_count(self, expected_chunks_list: list[list[int]]) -> int:
+        return self.chunks_without_error_detected - self.get_missed_error_chunk_count(
+            expected_chunks_list
+        )

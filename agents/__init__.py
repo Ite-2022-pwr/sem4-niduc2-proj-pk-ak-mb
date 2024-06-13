@@ -18,7 +18,17 @@ class SimulationAgent:
         self.fragmented_message_chunks = []
 
     def set_message(self, message: list[int]):
+        self.message.clear()
         self.message = message
+
+    def clear_message(self):
+        self.message.clear()
+
+    def set_coder_decoder(self, coder_decoder: codes.CoderDecoder):
+        self.coderDecoder = coder_decoder
+
+    def clear_fragmented_message_chunks(self):
+        self.fragmented_message_chunks.clear()
 
     def __str__(self):
         return self.name
