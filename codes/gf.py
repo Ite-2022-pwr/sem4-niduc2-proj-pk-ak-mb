@@ -56,7 +56,10 @@ class GaloisField:
         assert gf_table[0] == 0, "The GF table must have the zero element at index 0"
         inverse_table = np.zeros(gf_table.shape, dtype=gf_table.dtype)
         for alpha_i in range(len(gf_table)):
-            inverse_table[alpha_i] = np.argwhere(gf_table == alpha_i)[0][0]
+            indices = np.argwhere(gf_table == alpha_i)
+            if indices.size == 0:
+                raise ValueError(f"Element {alpha_i} not found in GF table")
+            inverse_table[alpha_i] = indices[0][0]
         return inverse_table
 
     def get_element(self, i):

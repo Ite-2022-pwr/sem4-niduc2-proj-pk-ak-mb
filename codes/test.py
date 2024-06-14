@@ -8,7 +8,7 @@ from utils.gf_poly_str_finder import find_irreducible_polynomial_str
 if __name__ == "__main__":
     # Inicjalizacja parametrów
     m = 6  # Stopień rozszerzenia ciała GF(2^m)
-    t = 3  # Zdolność korekcji błędów
+    t = 2  # Zdolność korekcji błędów
     polynomial_str = find_irreducible_polynomial_str(
         m
     )  # Reprezentacja wielomianu tworzącego ciała GF(2^m)
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     print(bch_code.codeword_length)
     print(bch_code.minimum_distance)
     print(polynomial_str)
-    print(bch_code.finite_field.min_polynomial(3).coefs)
+    print(bch_code.finite_field.polynomial_string)
     print(bch_code.generator_polynomial.coefs)
 
     # Generowanie losowej wiadomości do zakodowania
