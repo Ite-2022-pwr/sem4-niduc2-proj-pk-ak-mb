@@ -8,14 +8,14 @@ class GilbertElliotModel(ChannelModel):
     def __init__(
         self,
         name: str,
-        error_percentage: int,
-        error_repetition_percentage: int,
+        error_promile: int,
+        error_repetition_promile: int,
         verbose: Optional[bool] = False,
         seed: Optional[int] = int(time.time()),
     ):
         super().__init__(name, seed)
-        self.error_percentage = error_percentage
-        self.error_repetition_percentage = error_repetition_percentage
+        self.error_promile = error_promile
+        self.error_repetition_promile = error_repetition_promile
         self.state = 0  # 0 - good state, 1 - error state
         self.verbose = verbose
         self.good_error_change = 0
@@ -30,12 +30,12 @@ class GilbertElliotModel(ChannelModel):
         self.good_repetition = 0
         self.error_repetition = 0
         for bit in message:
-            random_value = self.rng.next_int_from_range(0, 100)
+            random_value = self.rng.next_int_from_range(0, 1000)
             if self.verbose:
                 stateName = "good" if self.state == 0 else "error"
                 print(f"State: {stateName}")
             if self.state == 0:
-                if random_value > (100 - self.error_percentage):
+                if random_value > (1000 - self.error_promile):
                     self.state = 1
                     self.good_error_change += 1
                     noisy_message.append(1 if bit == 0 else 0)
@@ -43,7 +43,7 @@ class GilbertElliotModel(ChannelModel):
                     self.good_repetition += 1
                     noisy_message.append(bit)
             else:
-                if random_value > (100 - self.error_repetition_percentage):
+                if random_value > (1000 - self.error_repetition_promile):
                     self.error_repetition += 1
                     noisy_message.append(1 if bit == 0 else 0)
                 else:
