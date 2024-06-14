@@ -7,14 +7,14 @@ from utils.gf_poly_str_finder import find_irreducible_polynomial_str
 
 if __name__ == "__main__":
     # Inicjalizacja parametrów
-    m = 6  # Stopień rozszerzenia ciała GF(2^m)
-    t = 2  # Zdolność korekcji błędów
+    m = 7  # Stopień rozszerzenia ciała GF(2^m)
+    t = 5  # Zdolność korekcji błędów
     polynomial_str = find_irreducible_polynomial_str(
         m
     )  # Reprezentacja wielomianu tworzącego ciała GF(2^m)
-
+    print(polynomial_str)
     # Inicjalizacja ciała GF(2^m)
-    finite_field = GaloisField(m, polynomial_str)
+    finite_field = GaloisField(m, polynomial_str, dtype=np.uint64)
 
     # Inicjalizacja kodu BCH
     bch_code = Bch(finite_field, t, "BCH(63, 45, 11)")
@@ -35,7 +35,7 @@ if __name__ == "__main__":
             word[location] ^= 1
 
     # Testowanie kodu BCH dla różnych liczby błędów
-    for num_errors in range(t):
+    for num_errors in range(t + 1):
         print("Original message:  ", message)
         # Kodowanie wiadomości
         codeword = bch_code.encode(message)

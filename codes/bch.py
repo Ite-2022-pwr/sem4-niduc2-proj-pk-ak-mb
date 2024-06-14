@@ -99,8 +99,10 @@ class BchCoderDecoder(CoderDecoder):
             discrepancies[row] = syndromes[two_mu]  # e.g., for mu=1, pick S[2]
             for j, coef in enumerate(error_locator_polynomials[row].coefficients[1:]):
                 if coef:
-                    discrepancies[row] ^= self.finite_field.multiply(
-                        coef, syndromes[two_mu - j - 1]
+                    discrepancies[row] = self.finite_field.dtype(
+                        discrepancies[row]
+                    ) ^ self.finite_field.dtype(
+                        self.finite_field.multiply(coef, syndromes[two_mu - j - 1])
                     )
 
             if discrepancies[row] == 0:
@@ -149,7 +151,7 @@ class BchCoderDecoder(CoderDecoder):
                 self.finite_field.get_exponent(x) for x in error_positions
             ]
             for exp in error_exponents:
-                received_codeword[exp] ^= 1
+                received_codeword[self.finite_field.dtype(exp)] ^= 1
         return received_codeword[: self.dataword_length], len(error_positions)
 
 

@@ -49,13 +49,15 @@ class GaloisField:
         gf_table = np.zeros(2**m, dtype=self.dtype)
         gf_table[1] = 1 << (m - 1)
         for i in range(1, 2**m - 1):
-            gf_table[i + 1] = (gf_table[i] >> 1) ^ ((gf_table[i] & 1) * polynomial)
+            gf_table[i + 1] = (gf_table[i] >> self.dtype(1)) ^ self.dtype(
+                (gf_table[i] & self.dtype(1)) * polynomial
+            )
         return gf_table
 
     def _generate_inverse_table(self, gf_table):
         assert gf_table[0] == 0, "The GF table must have the zero element at index 0"
         inverse_table = np.zeros(gf_table.shape, dtype=gf_table.dtype)
-        for alpha_i in range(len(gf_table)):
+        for alpha_i in gf_table:
             indices = np.argwhere(gf_table == alpha_i)
             if indices.size == 0:
                 raise ValueError(f"Element {alpha_i} not found in GF table")
@@ -63,7 +65,7 @@ class GaloisField:
         return inverse_table
 
     def get_element(self, i):
-        return self.table[(i % self.two_to_m_minus_one) + 1]
+        return self.table[int((i % self.two_to_m_minus_one) + 1)]
 
     def get_exponent(self, beta):
         assert beta != 0, "beta must be non-zero"
@@ -146,32 +148,34 @@ def add_gf2_polynomial(a: list, b: list) -> list:
     return [x ^ y for x, y in zip(a, b)]
 
 
-def add_gf2m_polynomial(gf: GaloisField, a: list, b: list) -> list:
+def add_gf2m_polynomial(gf: GaloisField, a: list, b: list, dtype=np.uint32) -> list:
     n_pad = len(a) - len(b)
     if n_pad > 0:
         b = b + n_pad * [0]
     elif n_pad < 0:
         a = a + (-n_pad * [0])
-    return [x ^ y for x, y in zip(a, b)]
+    return [dtype(x) ^ dtype(y) for x, y in zip(a, b)]
 
 
-def multiply_gf2_polynomial(a: list, b: list) -> list:
+def multiply_gf2_polynomial(a: list, b: list, dtype=np.uint32) -> list:
     product = (len(a) + len(b) - 1) * [0]
     for i, a_i in enumerate(a):
         for j, b_j in enumerate(b):
-            product[i + j] ^= a_i & b_j
+            product[i + j] ^= dtype(a_i) & dtype(b_j)
     return product
 
 
-def multiply_gf2m_polynomial(gf, a, b):
+def multiply_gf2m_polynomial(gf, a, b, dtype=np.uint32):
     product = (len(a) + len(b) - 1) * [0]
     for i, a_i in enumerate(a):
         for j, b_j in enumerate(b):
-            product[i + j] ^= gf.multiply(a_i, b_j)
+            product[i + j] = dtype(product[i + j]) ^ dtype(gf.multiply(a_i, b_j))
     return product
 
 
-def remainder_gf2_polynomial(a: list, b: list, deg_a: int, deg_b: int) -> list:
+def remainder_gf2_polynomial(
+    a: list, b: list, deg_a: int, deg_b: int, dtype=np.uint32
+) -> list:
     if not any(a):
         return []
     if deg_a < deg_b:
@@ -183,24 +187,27 @@ def remainder_gf2_polynomial(a: list, b: list, deg_a: int, deg_b: int) -> list:
     for i in np.arange(length_a, length_a - nxors, -1):
         if remainder[i - 1]:
             remainder[(i - length_b) : i] = np.bitwise_xor(
-                remainder[(i - length_b) : i], b
+                remainder[(i - length_b) : i], dtype(b)
             )
     return remainder
 
 
 class GF2Polynomial:
-    def __init__(self, coefficients: list) -> None:
+    def __init__(self, coefficients: list, dtype=np.uint32) -> None:
         if not is_gf2_polynomial(coefficients):
             raise ValueError("Not a polynomial over GF(2)")
         self.coefs = cut_trailing_gf2_polynomial_zeros(coefficients)
         self.degree = len(self.coefs) - 1 if any(self.coefs) else -1
+        self.dtype = dtype
 
     def __add__(self, other):
         return GF2Polynomial(add_gf2_polynomial(self.coefs, other.coefs))
 
     def __mul__(self, other):
         if isinstance(other, GF2Polynomial):
-            return GF2Polynomial(multiply_gf2_polynomial(self.coefs, other.coefs))
+            return GF2Polynomial(
+                multiply_gf2_polynomial(self.coefs, other.coefs, self.dtype)
+            )
         elif other in [0, 1]:
             return GF2Polynomial([other * y for y in self.coefs])
         else:
@@ -208,7 +215,9 @@ class GF2Polynomial:
 
     def __mod__(self, other):
         return GF2Polynomial(
-            remainder_gf2_polynomial(self.coefs, other.coefs, self.degree, other.degree)
+            remainder_gf2_polynomial(
+                self.coefs, other.coefs, self.degree, other.degree, self.dtype
+            )
         )
 
     def __eq__(self, other: object) -> bool:
@@ -236,7 +245,9 @@ class Gf2mPoly:
         if isinstance(other, Gf2mPoly):
             return Gf2mPoly(
                 self.field,
-                add_gf2m_polynomial(self.field, self.coefficients, other.coefficients),
+                add_gf2m_polynomial(
+                    self.field, self.coefficients, other.coefficients, self.field.dtype
+                ),
             )
         else:
             raise ValueError("Addition is defined between two GF(2^m) polynomials")
@@ -246,7 +257,7 @@ class Gf2mPoly:
             return Gf2mPoly(
                 self.field,
                 multiply_gf2m_polynomial(
-                    self.field, self.coefficients, other.coefficients
+                    self.field, self.coefficients, other.coefficients, self.field.dtype
                 ),
             )
         elif other in self.field.table:
@@ -272,5 +283,7 @@ class Gf2mPoly:
         result = 0
         for j, coef in enumerate(self.coefficients):
             if coef:
-                result ^= self.field.multiply(coef, self.field.get_element(i * j))
+                result = self.field.dtype(result) ^ self.field.dtype(
+                    self.field.multiply(coef, self.field.get_element(i * j))
+                )
         return result
