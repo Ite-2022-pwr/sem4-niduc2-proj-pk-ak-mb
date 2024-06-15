@@ -32,8 +32,7 @@ class GilbertElliotModel(ChannelModel):
         for bit in message:
             random_value = self.rng.next_int_from_range(0, 1000)
             if self.verbose:
-                stateName = "good" if self.state == 0 else "error"
-                print(f"State: {stateName}")
+                print(f"State: {"good" if self.state == 0 else "error"}")
             if self.state == 0:
                 if random_value > (1000 - self.error_promile):
                     self.state = 1

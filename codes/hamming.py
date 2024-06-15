@@ -69,8 +69,6 @@ class HammingCoderDecoder(CoderDecoder):
 
     def encode(self, message: list[int]) -> list[int]:
         if len(message) % self.data_bits != 0:
-            print(len(message) % self.data_bits)
-            print(len(message))
             raise ValueError(
                 f"Size of a message({len(message)}) must be dividable by a number of the data bits ({self.data_bits})\n calling from: {self.name}"
             )

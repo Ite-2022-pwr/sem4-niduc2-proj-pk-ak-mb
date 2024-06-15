@@ -23,7 +23,6 @@ class Sender(SimulationAgent):
         if len(self.message) % self.chunk_size != 0:
             pad_length = self.chunk_size - len(self.message) % self.chunk_size
             self.message += [0] * pad_length
-            print(f"Padding message with {pad_length} zeros")
         for i in range(0, len(self.message), self.chunk_size):
             self.fragmented_message_chunks.append(self.message[i : i + self.chunk_size])
 
