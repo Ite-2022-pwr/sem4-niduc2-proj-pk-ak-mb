@@ -14,7 +14,7 @@ class BinarySymmetricChannel(ChannelModel):
         seed: Optional[int] = int(time.time()),
     ):
         super().__init__(name, seed)
-        self.noise_promile = error_promile
+        self.error_promile = error_promile
         self.verbose = verbose
         self.bits_flipped = 0
         self.bits_not_flipped = 0
@@ -25,7 +25,7 @@ class BinarySymmetricChannel(ChannelModel):
         noisy_message = []
         for bit in message:
             random_value = self.rng.next_int_from_range(0, 1000)
-            if random_value > (1000 - self.noise_promile):
+            if random_value > (1000 - self.error_promile):
                 noisy_message.append(1 if bit == 0 else 0)
                 self.bits_flipped += 1
             else:

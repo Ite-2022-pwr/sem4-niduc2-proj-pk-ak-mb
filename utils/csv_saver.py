@@ -7,7 +7,9 @@ def save_to_csv(data: any, filename: str) -> None:
             for row in data:
                 file.write(",".join(map(str, row)))
                 file.write("\n")
-        print(f"Saving data to: {filename} finished")
+            print(f"Saving data to: {filename} finished")
+            file.close()
+            print(f"File closed: {filename}")
     except Exception as e:
         print(f"Error while handling file: {filename}")
         print(e)
