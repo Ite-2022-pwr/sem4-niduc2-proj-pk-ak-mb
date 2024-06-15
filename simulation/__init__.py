@@ -2,6 +2,7 @@ import os
 import time
 from datetime import datetime
 from pathlib import Path
+from enum import Enum
 
 import channels
 from agents.receiver import Receiver
@@ -10,13 +11,29 @@ from channels import ChannelModel
 from channels.bsc import BinarySymmetricChannel
 from channels.gem import GilbertElliotModel
 from codes import CoderDecoder
-from codes.gf import GaloisField
+
 from codes.hamming import HammingCoderDecoder
 from codes.triple import TripleCoderDecoder
-from codes.bch import BchCoderDecoder
+
 from utils.rng import LinearCongruentialGenerator
 from utils.csv_saver import save_to_csv
-from utils.gf_poly_str_finder import find_irreducible_polynomial_str
+
+
+class TestVector(Enum):
+    GEM_ERR_REP = (
+        0,
+        "GEM_ERR_REP",
+        "running variable error repetition rate in gem test",
+        "gem",
+    )
+    GEM_ERR = (1, "GEM_ERR", "running variable error rate in gem test", "gem")
+    GEM_ERR_AND_ERR_REP = (
+        2,
+        "GEM_ERR_AND_ERR_REP",
+        "running variable error rate and error repetition rate in gem test",
+        "gem",
+    )
+    BSC_ERR = (3, "BSC_ERR", "running variable error rate in bsc test", "bsc")
 
 
 def simulation() -> None:
@@ -95,8 +112,8 @@ def hamming_tests(
 ) -> None:
     # testy dla kodowania hamminga, różne ilości bitów danych, stałe procenty błędów
     print("Running Hamming tests")
-    error_percentage = 4
-    error_repetition_percentage = 13
+    error_promile = 40
+    error_repetition_promile = 130
     results = []
     test_full_name = (
         "ch_gem_4err_13err_rep_cd_ham_7_127total_4_120data_" + now_string + "_test"
@@ -116,30 +133,13 @@ def hamming_tests(
                 + now_string
                 + "_test"
             ),
-            channel=GilbertElliotModel(
-                "GEM", error_percentage, error_repetition_percentage
-            ),
+            channel=GilbertElliotModel("GEM", error_promile, error_repetition_promile),
             coder_decoder=HammingCoderDecoder(total_bits, data_bits),
             message_length=message_length,
             chunk_size=data_bits,
         )
     print("Finished Hamming tests")
     save_to_csv(results, test_full_name)
-
-
-def bch_tests():
-    # Inicjalizacja parametrów
-    m = 6  # Stopień rozszerzenia ciała GF(2^m)
-    t = 3  # Zdolność korekcji błędów
-    polynomial_str = find_irreducible_polynomial_str(
-        m
-    )  # Reprezentacja wielomianu tworzącego ciała GF(2^m)
-
-    # Inicjalizacja ciała GF(2^m)
-    finite_field = GaloisField(m, polynomial_str)
-
-    # Inicjalizacja kodu BCH
-    bch_code = BchCoderDecoder(finite_field, t, "BCH(63, 15)")
 
 
 def variable_error_percentage_tests_bsc(
@@ -156,11 +156,11 @@ def variable_error_percentage_tests_bsc(
         + "_test"
     )
     results = []
-    for i in range(0, 41, 2):
+    for i in range(0, 1001, 1):
         results = run_test(
             test_name=str(
                 "ch_bsc_"
-                + str(i)
+                + str(float(i) / 10)
                 + "err_cd_ham_"
                 + str(total_bits)
                 + "total_"
@@ -171,10 +171,10 @@ def variable_error_percentage_tests_bsc(
             ),
             channel=BinarySymmetricChannel("BSC", i),
             coder_decoder=HammingCoderDecoder(total_bits, data_bits),
-            message_length=10000 * data_bits,
+            message_length=1000 * data_bits,
             chunk_size=data_bits,
             parity_bits=parity_bits,
-            repetitions=20,
+            repetitions=10,
         )
     print("Finished running variable error_percentage in bsc test")
     save_to_csv(results, test_full_name)
@@ -184,69 +184,204 @@ def variable_error_percentage_tests_gem(
     now_string: str = datetime.now().strftime("%H_%M_%S_%d_%m_%Y"),
 ) -> None:
     # testy dla zmiennego procentu błędów, stałe kodowanie hamminga
-    print(
-        "Running variable error_percentage and error_repetition_percentage in gem test"
-    )
+    print("Running variable error_percentage in gem test")
     parity_bits = 3
     total_bits = 2**parity_bits - 1
     data_bits = total_bits - parity_bits
-    merged_results = []
-    merged_lines_number = 0
-    merged_tests_full_name = (
-        "ch_gem_0err_min_40err_max_2err_step_"
-        + "0err_rep_min_40err_rep_max_2err_rep_step_"
-        + "cd_ham_7total_4data_"
-        + now_string
-        + "_test"
-    )
-    for i in range(0, 41, 2):
+    error_repetition_promile = 100
+    results = []
+    for i in range(0, 1001, 1):
         print(
-            f"\tRunning variable error_repetition_rate in gem test for {i} error rate"
+            f"\tRunning variable error_repetition_rate in gem test for {float(i)/10}% error rate"
         )
-        test_full_name = (
-            "ch_gem_"
-            + str(i)
-            + "err_0err_rep_min_40_err_rep_max_2err_rep_step_cd_ham_7total_4data_"
-            + now_string
-            + "_test"
+        run_test(
+            test_name=str(
+                "ch_gem_"
+                + str(float(i) / 10)
+                + "err_10err_rep_cd_ham_"
+                + str(total_bits)
+                + "total_"
+                + str(data_bits)
+                + "data_"
+                + now_string
+                + "_test"
+            ),
+            channel=GilbertElliotModel("GEM", i, error_repetition_promile),
+            coder_decoder=HammingCoderDecoder(total_bits, data_bits),
+            message_length=1000 * data_bits,
+            chunk_size=data_bits,
+            parity_bits=parity_bits,
+            repetitions=10,
+            results_to_append=results,
+            start_no=len(results) - 1 if len(results) > 0 else 0,
         )
-        results = []
-        for j in range(0, 41, 2):
-            results = run_test(
+    save_to_csv(
+        results,
+        "ch_gem_0err_min_100err_max_01err_step_10err_rep_cd_ham_7total_4data_"
+        + now_string
+        + "_test",
+    )
+    print("Finished running variable error_percentage in gem test")
+
+
+def variable_error_repetition_percentage_tests_gem(
+    now_string: str = datetime.now().strftime("%H_%M_%S_%d_%m_%Y"),
+) -> None:
+    # testy dla zmiennego procentu powtórzenia błędów, stałe kodowanie hamminga
+    print("Running variable error_percentage in gem test")
+    parity_bits = 3
+    total_bits = 2**parity_bits - 1
+    data_bits = total_bits - parity_bits
+    error_promile = 20
+    results = []
+    for i in range(0, 1001, 1):
+        print(
+            f"\tRunning variable error_repetition_rate in gem test for {float(i)/10}% error rate"
+        )
+        run_test(
+            test_name=str(
+                "ch_gem_2err_"
+                + str(float(i) / 10)
+                + "err_rep_cd_ham_"
+                + str(total_bits)
+                + "total_"
+                + str(data_bits)
+                + "data_"
+                + now_string
+                + "_test"
+            ),
+            channel=GilbertElliotModel("GEM", error_promile, i),
+            coder_decoder=HammingCoderDecoder(total_bits, data_bits),
+            message_length=1000 * data_bits,
+            chunk_size=data_bits,
+            parity_bits=parity_bits,
+            repetitions=10,
+            results_to_append=results,
+            start_no=len(results) - 1 if len(results) > 0 else 0,
+        )
+    save_to_csv(
+        results,
+        "ch_gem_2err_0err_rep_min_100err_rep_max_01err_rep_step_cd_ham_7total_4data_"
+        + now_string
+        + "_test",
+    )
+    print("Finished running variable error_percentage in gem test")
+
+
+def variable_error_and_error_repetition_test_gem(
+    now_string: str = datetime.now().strftime("%H_%M_%S_%d_%m_%Y"),
+) -> None:
+    # testy dla zmiennego procentu błędów i powtórzeń błędów, stałe kodowanie hamminga
+    print("Running variable error_percentage and error_repetition_rate in gem test")
+    parity_bits = 3
+    total_bits = 2**parity_bits - 1
+    data_bits = total_bits - parity_bits
+    results = []
+    for i in range(0, 1001, 1):
+        for j in range(0, 1001, 1):
+            print(
+                f"\tRunning variable error_rate and error_repetition_rate in gem test for {float(i)/10}% error rate and {float(j)/10}% error repetition rate"
+            )
+            run_test(
                 test_name=str(
                     "ch_gem_"
-                    + str(i)
-                    + "_"
-                    + str(j)
-                    + "_ham_"
+                    + str(float(i) / 10)
+                    + "err_"
+                    + str(float(j) / 10)
+                    + "err_rep_cd_ham_"
                     + str(total_bits)
-                    + "_"
+                    + "total_"
                     + str(data_bits)
-                    + "_"
+                    + "data_"
                     + now_string
-                    + "_test.csv"
+                    + "_test"
                 ),
                 channel=GilbertElliotModel("GEM", i, j),
                 coder_decoder=HammingCoderDecoder(total_bits, data_bits),
-                message_length=10000 * data_bits,
+                message_length=1000 * data_bits,
                 chunk_size=data_bits,
+                parity_bits=parity_bits,
+                repetitions=3,
                 results_to_append=results,
-                repetitions=10,
+                start_no=len(results) - 1 if len(results) > 0 else 0,
             )
-        print(
-            f"\tFinished running variable error_repetition_rate in gem test for {i} error rate"
-        )
-        if len(merged_results) == 0:
-            merged_results.append(results[0])
-        for row in results[1:]:
-            row[0] = merged_lines_number
-            merged_lines_number += 1
-            merged_results.append(row)
-        save_to_csv(results, test_full_name)
-    save_to_csv(merged_results, merged_tests_full_name)
-    print(
-        "Finished running variable error_percentage and error_repetition_percentage in gem test"
+    save_to_csv(
+        results,
+        "ch_gem_0err_min_100err_max_01err_step_0err_rep_min_100err_rep_max_01err_rep_step_cd_ham_7total_4data_"
+        + now_string
+        + "_test",
     )
+    print("Finished running variable error_percentage in gem test")
+
+
+def variable_test(
+    now_string: str = datetime.now().strftime("%H_%M_%S_%d_%m_%Y"),
+    coder_decoder: CoderDecoder = HammingCoderDecoder(7, 4),
+    parity_bits: int = 3,
+    chunk_size: int = -1,
+    repetitions: int = 3,
+    test_vector_chosen: TestVector = TestVector.BSC_ERR,
+) -> None:
+    print(test_vector_chosen.value[2])
+    total_bits = 2**parity_bits - 1
+    data_bits = total_bits - parity_bits
+    results = []
+    for i in (
+        range(0, 1001, 1)
+        if test_vector_chosen is TestVector.GEM_ERR_AND_ERR_REP
+        else range(0, 2, 1)
+    ):
+        for j in range(0, 1001, 1):
+            print(
+                f"\t{test_vector_chosen.value[2]} for {float(j)/10}% error rate"
+                + f"and {float(i)/10 if test_vector_chosen is TestVector.GEM_ERR_AND_ERR_REP else float(j)/10}% error repetition rate"
+                if test_vector_chosen is not TestVector.BSC_ERR
+                else ""
+            )
+            channel: ChannelModel
+            if test_vector_chosen is TestVector.GEM_ERR:
+                channel = GilbertElliotModel("GEM", j, 100)
+            elif test_vector_chosen is TestVector.GEM_ERR_REP:
+                channel = GilbertElliotModel("GEM", 20, j)
+            elif test_vector_chosen is TestVector.BSC_ERR:
+                channel = BinarySymmetricChannel("BSC", j)
+            else:
+                channel = GilbertElliotModel("GEM", j, i)
+            test_name = f"ch_{channel.name}_"
+            test_name += (
+                f"{i}"
+                if test_vector_chosen is TestVector.GEM_ERR_AND_ERR_REP
+                else f"{j}"
+            )
+            test_name += "err_"
+            test_name += (
+                (
+                    f"{j}err_rep_"
+                    if test_vector_chosen is TestVector.GEM_ERR_AND_ERR_REP
+                    else f"{i}err_rep_"
+                )
+                if test_vector_chosen is not TestVector.BSC_ERR
+                else ""
+            )
+            test_name += f"cd_{coder_decoder.name}_{now_string}_test"
+            run_test(
+                test_name=test_name,
+                channel=channel,
+                coder_decoder=coder_decoder,
+                message_length=(
+                    1000 * data_bits if chunk_size == -1 else chunk_size * 1000
+                ),
+                chunk_size=data_bits if chunk_size == -1 else chunk_size,
+                parity_bits=parity_bits,
+                repetitions=repetitions,
+                results_to_append=results,
+                start_no=len(results) - 1 if len(results) > 0 else 0,
+            )
+    save_to_csv(
+        results,
+        f"{test_vector_chosen.value[1]}_{coder_decoder.name}_{now_string}_test",
+    )
+    print(f"Finished {test_vector_chosen.value[2]}")
 
 
 def run_test(
@@ -360,4 +495,9 @@ def run_test(
 
 
 if __name__ == "__main__":
-    simulation()
+    # simulation()
+    variable_test(
+        coder_decoder=HammingCoderDecoder(7, 4),
+        test_vector_chosen=TestVector.GEM_ERR_AND_ERR_REP,
+        repetitions=1,
+    )

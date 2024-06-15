@@ -12,7 +12,7 @@ from codes import CoderDecoder
 
 class HammingCoderDecoder(CoderDecoder):
     def __init__(self, total_bits: int = 7, data_bits: int = 4) -> None:
-        super().__init__(name="hamming")
+        super().__init__(name=f"hamming{total_bits}_{data_bits}")
         self.total_bits: int = total_bits
         self.data_bits: int = data_bits
         self.parity_bits: int = self.total_bits - self.data_bits
