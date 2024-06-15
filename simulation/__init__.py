@@ -2,7 +2,7 @@ import os
 import threading
 import time
 import queue
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from datetime import datetime
 from pathlib import Path
 from enum import Enum
@@ -103,7 +103,7 @@ def simulation_threaded() -> None:
                 }
             )
 
-    with ThreadPoolExecutor(max_workers=4) as executor:
+    with ProcessPoolExecutor(max_workers=8) as executor:
         futures = [
             executor.submit(simulation_thread_target, **arguments)
             for arguments in target_arguments
@@ -124,7 +124,7 @@ def simulation_threaded() -> None:
             }
         )
 
-    with ThreadPoolExecutor(max_workers=8) as executor:
+    with ProcessPoolExecutor(max_workers=8) as executor:
         futures = [
             executor.submit(simulation_thread_target, **arguments)
             for arguments in target_arguments
@@ -151,7 +151,7 @@ def simulation_thread_target(
         now_string=now_string,
         coder_decoder=coder_decoder,
         test_vector_chosen=test_vector_chosen,
-        repetitions=3,
+        repetitions=5,
     )
 
 
@@ -469,12 +469,18 @@ def variable_test(
                 test_name=test_name,
                 channel=channel,
                 error_promile=(
-                    i if test_vector_chosen is TestVector.GEM_ERR_AND_ERR_REP else j
+                    i
+                    if test_vector_chosen is TestVector.GEM_ERR_AND_ERR_REP
+                    else (
+                        default_error_promile
+                        if test_vector_chosen is TestVector.GEM_ERR_REP
+                        else j
+                    )
                 ),
                 error_repetition_promile=(
                     default_error_repetition_promile
                     if test_vector_chosen is TestVector.GEM_ERR
-                    else j
+                    else (0 if test_vector_chosen is TestVector.BSC_ERR else j)
                 ),
                 coder_decoder=coder_decoder,
                 message_length=1000 * data_bits,

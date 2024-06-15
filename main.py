@@ -1,4 +1,4 @@
-from simulation import simulation
+from simulation import simulation_threaded
 
 if __name__ == "__main__":
-    simulation()
+    simulation_threaded()
