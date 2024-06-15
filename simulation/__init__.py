@@ -63,6 +63,14 @@ def simulation_threaded() -> None:
     os.mkdir(triple_tests_result_path)
     target_arguments = []
     for vector in TestVector:
+        target_arguments.append(
+            {
+                "coder_decoder": TripleCoderDecoder(),
+                "test_vector_chosen": vector,
+                "now_string": now_string,
+                "result_dir_path": triple_tests_result_path,
+            }
+        )
         for i in range(3, 8):
             parity_bits = i
             total_bits = 2**parity_bits - 1
@@ -75,27 +83,6 @@ def simulation_threaded() -> None:
                     "result_dir_path": hamming_tests_results_path,
                 }
             )
-
-    with ProcessPoolExecutor(max_workers=8) as executor:
-        futures = [
-            executor.submit(simulation_thread_target, **arguments)
-            for arguments in target_arguments
-        ]
-
-    # Wait for all tasks to complete
-    for future in futures:
-        future.result()
-
-    target_arguments.clear()
-    for vector in TestVector:
-        target_arguments.append(
-            {
-                "coder_decoder": TripleCoderDecoder(),
-                "test_vector_chosen": vector,
-                "now_string": now_string,
-                "result_dir_path": triple_tests_result_path,
-            }
-        )
 
     with ProcessPoolExecutor(max_workers=8) as executor:
         futures = [
@@ -181,6 +168,7 @@ def variable_test(
                 else ""
             )
             test_name += f"cd_{coder_decoder.name}_{now_string}_test"
+            print(f"{test_name} still alive!") if j % 10 == 0 else None
             results = run_test(
                 test_name=test_name,
                 channel=channel,
