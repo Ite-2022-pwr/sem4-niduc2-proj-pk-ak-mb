@@ -111,7 +111,7 @@ def simulation_thread_target(
         now_string=now_string,
         coder_decoder=coder_decoder,
         test_vector_chosen=test_vector_chosen,
-        repetitions=5,
+        repetitions=1,
     )
 
 
